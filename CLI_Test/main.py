@@ -24,7 +24,6 @@ class CLI():
         # internal list used to store the values from GET call
         self.values = []
 
-
         self.args = Args()
         with indent(4, quote='>>>'):
             puts(colored.red('Aruments passed in: ') + str(self.args.all))
@@ -37,17 +36,18 @@ class CLI():
         self.values = self.getInputValues()
         self.evaluate()
 
-    def evaluate(self,):
+    def evaluate(self, ):
         # test the code with input
         # os.system("Test.jar")
         # p = subprocess.Popen(['java', '-jar', 'Test.jar'])
         for input in self.values:
             print input['input']
-            process = subprocess.Popen('test.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)._communicate(input['input'])
+            process = subprocess.Popen('test.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)._communicate(
+                input['input'])
             output = process[0]
             print output
 
-            #TODO send output to validate on server
+            # TODO send output to validate on server
 
     # Check if the Id is a valid problem id (the problem with this id exists)
     # If it exists, get it, else exit and print error
@@ -69,7 +69,6 @@ class CLI():
         except requests.ConnectionError:
             print strings.connectionError
 
-
     def checkArguments(self):
         # Check if first argument is a valid number
         try:
@@ -85,15 +84,15 @@ class CLI():
                 else:
                     puts(colored.red(strings.notAFile))
                     puts(colored.yellow(strings.commandExample))
-                    #exit(1)
+                    # exit(1)
             else:
                 puts(colored.red(strings.noPathExists))
                 puts(colored.yellow(strings.commandExample))
-                #exit(1)
+                # exit(1)
         else:
             puts(colored.red(strings.noPath))
             puts(colored.yellow(strings.commandExample))
-            #exit(1)
+            # exit(1)
 
         # Check if third argument exists
         if self.args[2]:
