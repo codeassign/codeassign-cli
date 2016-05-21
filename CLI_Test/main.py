@@ -1,10 +1,12 @@
 import filecmp
+import json
 import os
 import subprocess
 
 import requests
 from clint.arguments import Args
 from clint.textui import puts, colored, indent
+from collections import OrderedDict
 
 import strings
 
@@ -16,13 +18,17 @@ class CLI():
 
         # list of id's of test cases, used to determine which test cases to test (if the user wants to run specific tests not all)
         self.testCases = []
-        # get problem path
-        self.pathGetProblem = 'http://api.codeassign.com/Problem'
-        # get TestCase values
+        # GET problem path
+        self.pathGetProblem = 'http://api.codeassign.com/Problem/'
+        # GET TestCase values
         self.pathGetTestValues = 'http://api.codeassign.com/TestCase/'
-
+        # POST evaluate TestCase (output)
+        self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/1?token=aea7e551-d71b-4d1e-9ee7-3a442f6ec429'
         # internal list used to store the values from GET call
         self.values = []
+
+        # List of outputs to evaluate
+        self.outputList = []
 
         self.args = Args()
         with indent(4, quote='>>>'):
@@ -37,17 +43,64 @@ class CLI():
         self.evaluate()
 
     def evaluate(self, ):
-        # test the code with input
+
+        # Test the code with input
         # os.system("Test.jar")
         # p = subprocess.Popen(['java', '-jar', 'Test.jar'])
         for input in self.values:
+            testCaseId = input['id']
             print input['input']
+
             process = subprocess.Popen('test.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)._communicate(
                 input['input'])
             output = process[0]
-            print output
 
-            # TODO send output to validate on server
+            data = {}
+            data['id'] = testCaseId
+            data['output'] = "101"
+            self.outputList.append(data)
+
+        print self.outputList
+        response = requests.post(self.pathSetPostEvaluate, json=self.outputList)
+        print response.status_code
+
+        output = response.json()
+
+        # Check if something is wrong
+        self.checkJsonStatusCode(output)
+
+        # Check if tests passed evaluation
+        passed = 0
+        for testCase in output['testCases']:
+            if self.checkTestCase(testCase):
+                passed += 1
+
+        self.printFinalResult(output, passed)
+
+    def printFinalResult(self, output, passed):
+        if passed == len(output['testCases']):
+            print "All test passed!"
+        else:
+            print "\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases']))
+            print "Some tests failed!"
+
+    def checkJsonStatusCode(self, output):
+        if "statusCode" in output.keys():
+            if output['statusCode'] == requests.codes.unauthorized:
+                puts(colored.red("Invalid token!"))
+                exit(0)
+            elif output['statusCode'] != requests.codes.ok:
+                puts(colored.red("Bad request!"))
+                exit(0)
+
+    def checkTestCase(self, testCase):
+        passed = 0
+        if testCase['accepted']:
+            puts('Test case number ' + str(testCase['id']) + ": " + colored.green("Passed!"))
+            return True
+        else:
+            puts('Test case number ' + str(testCase['id']) + ": " + colored.red("Failed!"))
+            return False
 
     # Check if the Id is a valid problem id (the problem with this id exists)
     # If it exists, get it, else exit and print error
@@ -65,6 +118,7 @@ class CLI():
             # data = response.json()
             response.encoding = strings.encoding
             data = response.json()
+            print data
             return data
         except requests.ConnectionError:
             print strings.connectionError
