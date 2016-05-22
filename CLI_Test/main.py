@@ -1,11 +1,11 @@
-import filecmp
+# coding=utf-8
 import os
 import subprocess
 import sys
 
 import requests
 from clint.arguments import Args
-from clint.textui import puts, colored, indent
+from clint.textui import puts, colored
 
 import strings
 
@@ -42,6 +42,7 @@ class CLI():
 
         # Get all arguments from command line
         self.args = Args()
+        self.checkIfNoArguments()
 
         # Check given arguments
         self.checkArguments()
@@ -82,7 +83,7 @@ class CLI():
             tokenFile = open(tokenPath, 'w')
             stringToWrite = "APP_TOKEN=" + tokenInput
             tokenFile.write(stringToWrite)
-            puts(colored.green("Token saved to: \"" + tokenPath + "\""))
+            puts(colored.green("Token saved to: \"" + tokenPath + "\"\n"))
             tokenFile.close()
 
     def evaluate(self, ):
@@ -166,7 +167,7 @@ class CLI():
             puts(colored.red("All (" + str(numberOfTests) + ") test/s failed! Try again!"))
         # Some test failed
         else:
-            print "\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases']))
+            puts("\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases'])))
             puts(colored.yellow("Some tests failed! Almost there, keep trying!"))
 
     def checkJsonStatusCode(self, output):
@@ -197,7 +198,7 @@ class CLI():
                 sys.exit(1)
             else:
                 puts(colored.green(strings.problemIdOk))
-            response.encoding = strings.encoding
+            response.encoding = "utf8"
             data = response.json()
             return data
 
@@ -210,7 +211,12 @@ class CLI():
         try:
             self.problemId = int(self.args[0])
         except ValueError:
-            puts(colored.red(strings.firstArgumentInvalid))
+            #  Help command entered
+            if self.args[0] == "help":
+                puts(colored.yellow(strings.commandExample))
+            # Invalid input
+            else:
+                puts(colored.red(strings.firstArgumentInvalid))
             sys.exit(1)
 
         # Check if second argument(executable) is a valid file
@@ -308,7 +314,7 @@ class CLI():
             int(split[0])
             int(split[1])
         except ValueError:
-            print "Incorrect range for Test Cases given!"
+            puts("Incorrect range for Test Cases given!")
             sys.exit(1)
 
     def setTestCases(self, split):
@@ -330,7 +336,11 @@ class CLI():
         if response.status_code != requests.codes.ok:
             puts(colored.red("Bad request!2"))
             sys.exit(1)
+
         data = response.json()
+
+        # Modify encoding of account info
+        self.modifyEncoding(data)
 
         # Check if wrong token
         if 'errorMessage' in data.keys():
@@ -342,16 +352,20 @@ class CLI():
             puts(colored.green("Token is valid!\n"))
             formatNum = len(data['email']) + 8
             puts(" " * (formatNum / 3) + colored.yellow("Account info"))
-
             nameLen = len(data['name']) + 8
             puts("|" + "=" * formatNum + "|")
             # puts(colored.yellow("\tAccount info"))
+
             puts("| " + colored.yellow("Name: ") + " " + data['name'] + " " * (
                 formatNum - nameLen) + "|\n| " + colored.yellow(
                 "Email: ") + data['email'] + "|")
             puts("|" + "=" * formatNum + "|")
             puts()
             return True
+
+    def modifyEncoding(self, data):
+        data['name'] = data['name'].encode('cp1250')
+        data['email'] = data['email'].encode('cp1250')
 
     # Get the extension of the users file (executable)
     def getFileType(self, pathToFile):
@@ -362,6 +376,12 @@ class CLI():
             fileName = pathToFile.split("\\")[-1]
         type = fileName.split(".")[-1]
         self.fileType = type
+
+    # No arguments given
+    def checkIfNoArguments(self):
+        if len(self.args) == 0:
+            puts(colored.red("No arguments given! Use \"cae help\" for instructions."))
+            sys.exit(1)
 
 
 cli = CLI()
