@@ -1,12 +1,11 @@
 import filecmp
-import json
 import os
 import subprocess
+import sys
 
 import requests
 from clint.arguments import Args
 from clint.textui import puts, colored, indent
-from collections import OrderedDict
 
 import strings
 
@@ -16,82 +15,168 @@ class CLI():
 
         # sys.path.insert(0, os.path.abspath('..'))
 
-        # list of id's of test cases, used to determine which test cases to test (if the user wants to run specific tests not all)
+        # Used if user wants to test specific test cases (not all)
         self.testCases = []
         # GET problem path
         self.pathGetProblem = 'http://api.codeassign.com/Problem/'
         # GET TestCase values
         self.pathGetTestValues = 'http://api.codeassign.com/TestCase/'
         # POST evaluate TestCase (output)
-        self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/1?token=aea7e551-d71b-4d1e-9ee7-3a442f6ec429'
+        self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/'
+        # POST AssociateConsoleToken
+        self.pathAssociateToken = 'http://api.codeassign.com/AssociateConsoleToken/'
+
+        # Problem id
+        self.problemId = ''
+        # Path to the user's exe file
+        self.pathToExecutable = ''
+        # File's extension
+        self.fileType = ''
+        # Token of user
+        self.token = ''
         # internal list used to store the values from GET call
         self.values = []
 
         # List of outputs to evaluate
         self.outputList = []
 
+        # Get all arguments from command line
         self.args = Args()
-        with indent(4, quote='>>>'):
-            puts(colored.red('Aruments passed in: ') + str(self.args.all))
-            puts(colored.red('Flags detected: ') + str(self.args.flags))
-            puts(colored.red('Files detected: ') + str(self.args.files))
-            puts(colored.red('NOT Files detected: ') + str(self.args.not_files))
-            puts(colored.red('Grouped Arguments: ') + str(dict(self.args.grouped)))
 
+        # Check given arguments
         self.checkArguments()
+
+        # Get test cases for given problem id
         self.values = self.getInputValues()
+
+        # Check token
+        self.tokenExists()
+        # Evaluate each test
         self.evaluate()
+
+    # Check if token is already created. If no token found prompt user for input
+    def tokenExists(self):
+        tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
+
+        # Token already exists
+        if os.path.exists(tokenPath):
+            if os.path.isfile(tokenPath):
+                tokenFile = open(tokenPath, 'r')
+                line = tokenFile.readline()
+                # Check if file is properly formatted
+                if len(line.split("=")) != 2:
+                    puts(colored.red("Invalid token format in " + tokenPath))
+                    sys.exit(1)
+                token = line.split("=")[1]
+                self.checkToken(token)
+                # Not sure if needed for pretty output
+                # puts(colored.yellow("Found existing token in: \"" + tokenPath + "\""))
+                self.token = "?token=" + token
+                tokenFile.close()
+        # Create new token in ~/.codeassign
+        else:
+            puts(colored.yellow('No token file detected. Please enter your token: '))
+            tokenInput = raw_input()
+            self.checkToken(tokenInput)
+            self.token = "?token=" + tokenInput
+            tokenFile = open(tokenPath, 'w')
+            stringToWrite = "APP_TOKEN=" + tokenInput
+            tokenFile.write(stringToWrite)
+            puts(colored.green("Token saved to: \"" + tokenPath + "\""))
+            tokenFile.close()
 
     def evaluate(self, ):
 
         # Test the code with input
         # os.system("Test.jar")
-        # p = subprocess.Popen(['java', '-jar', 'Test.jar'])
         for input in self.values:
             testCaseId = input['id']
-            print input['input']
 
-            process = subprocess.Popen('test.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)._communicate(
-                input['input'])
-            output = process[0]
+            try:
+                process = 0
+                if self.fileType == "exe":
+                    process = subprocess.Popen(self.pathToExecutable, stdin=subprocess.PIPE,
+                                               stdout=subprocess.PIPE).communicate(input['input'])
+                elif self.fileType == "jar":
+                    process = subprocess.Popen(['java', '-jar', self.pathToExecutable], stdin=subprocess.PIPE,
+                                               stdout=subprocess.PIPE).communicate(input['input'])
+                else:
+                    puts(colored.red("Given type executable is not supported!"))
+                    puts(colored.yellow("Currently supported file extensions: \".exe\", \".jar\""))
+                    sys.exit(1)
 
-            data = {}
-            data['id'] = testCaseId
-            data['output'] = "101"
-            self.outputList.append(data)
+                output = process[0]
+                data = self.formatOutput(output, testCaseId)
+                self.outputList.append(data)
+            except OSError:
+                puts(colored.red("ERROR! : Given file is not an executable!"))
+                sys.exit(1)
 
-        print self.outputList
-        response = requests.post(self.pathSetPostEvaluate, json=self.outputList)
-        print response.status_code
-
-        output = response.json()
+        output = self.POSTEvaluate()
 
         # Check if something is wrong
         self.checkJsonStatusCode(output)
 
         # Check if tests passed evaluation
         passed = 0
-        for testCase in output['testCases']:
-            if self.checkTestCase(testCase):
-                passed += 1
+        # Used for checking how many tests were really tested (user put too many)
+        numberOfTests = 0
+        if len(self.testCases) == 0:
+            # Testing all available test cases
+            for testCase in output['testCases']:
+                numberOfTests += 1
+                if self.checkTestCase(testCase):
+                    passed += 1
+            puts()
+        # Testing specific test cases
+        else:
+            for testCase in output['testCases']:
+                if testCase['id'] in self.testCases:
+                    numberOfTests += 1
+                    if self.checkTestCase(testCase):
+                        passed += 1
+            puts()
 
-        self.printFinalResult(output, passed)
+        self.printFinalResult(output, passed, numberOfTests)
 
-    def printFinalResult(self, output, passed):
-        if passed == len(output['testCases']):
-            print "All test passed!"
+    def POSTEvaluate(self):
+        response = requests.post(self.pathSetPostEvaluate + str(self.problemId) + str(self.token), json=self.outputList)
+        output = response.json()
+        return output
+
+    def formatOutput(self, output, testCaseId):
+        data = {}
+        data['id'] = testCaseId
+        data['output'] = output
+        return data
+
+    def printFinalResult(self, output, passed, numberOfTests):
+        if numberOfTests == 0 and len(self.testCases) > 0:
+            puts(colored.red("Given test cases " + str(self.testCases) + " don't exist for problem with id " + str(
+                self.problemId) + "!"))
+            sys.exit(1)
+        elif numberOfTests == 0:
+            puts(colored.red("No test cases found for problem with id " + str(self.problemId) + "!"))
+            sys.exit(1)
+        # All tests passed
+        if passed >= numberOfTests:
+            puts(colored.green("\nAll (" + str(numberOfTests) + ") test/s passed! Well done!"))
+        # All tests failed
+        elif passed <= 0:
+            puts(colored.red("All (" + str(numberOfTests) + ") test/s failed! Try again!"))
+        # Some test failed
         else:
             print "\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases']))
-            print "Some tests failed!"
+            puts(colored.yellow("Some tests failed! Almost there, keep trying!"))
 
     def checkJsonStatusCode(self, output):
         if "statusCode" in output.keys():
             if output['statusCode'] == requests.codes.unauthorized:
                 puts(colored.red("Invalid token!"))
-                exit(0)
+                sys.exit(1)
             elif output['statusCode'] != requests.codes.ok:
                 puts(colored.red("Bad request!"))
-                exit(0)
+                sys.exit(1)
 
     def checkTestCase(self, testCase):
         passed = 0
@@ -102,53 +187,54 @@ class CLI():
             puts('Test case number ' + str(testCase['id']) + ": " + colored.red("Failed!"))
             return False
 
-    # Check if the Id is a valid problem id (the problem with this id exists)
-    # If it exists, get it, else exit and print error
+    # Get test cases for the given problemId
     def getInputValues(self):
-
         try:
-            # response = requests.get(self.pathGetProblem + str(self.args[0]))
             response = requests.get(self.pathGetTestValues + str(self.problemId))
-            print response.status_code
+            # Wrong problem id
             if not response.status_code == requests.codes.ok:
                 puts(colored.red(strings.invalidProblemId))
-                exit(1)
+                sys.exit(1)
             else:
                 puts(colored.green(strings.problemIdOk))
-            # data = response.json()
             response.encoding = strings.encoding
             data = response.json()
-            print data
             return data
+
         except requests.ConnectionError:
-            print strings.connectionError
+            puts(colored.red(strings.connectionError))
+            sys.exit(1)
 
     def checkArguments(self):
-        # Check if first argument is a valid number
+        # Check if first argument(problemId) is a valid number
         try:
             self.problemId = int(self.args[0])
         except ValueError:
-            print strings.firstArgument
+            puts(colored.red(strings.firstArgumentInvalid))
+            sys.exit(1)
 
-        # Check if second argument is a valid file
-        if self.args[1]:
-            if os.path.exists(self.args[1]):
-                if os.path.isfile(self.args[1]):
+        # Check if second argument(executable) is a valid file
+        pathToFile = self.getFullPath(self.args[1])
+        self.getFileType(pathToFile)
+        if pathToFile:
+            if os.path.exists(pathToFile):
+                if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
                     puts(colored.green(strings.fileValid))
+                    self.pathToExecutable = pathToFile
                 else:
                     puts(colored.red(strings.notAFile))
                     puts(colored.yellow(strings.commandExample))
-                    # exit(1)
+                    sys.exit(1)
             else:
                 puts(colored.red(strings.noPathExists))
                 puts(colored.yellow(strings.commandExample))
-                # exit(1)
+                sys.exit(1)
         else:
-            puts(colored.red(strings.noPath))
+            puts(colored.red(strings.noPathGiven))
             puts(colored.yellow(strings.commandExample))
-            # exit(1)
+            sys.exit(1)
 
-        # Check if third argument exists
+        # Check if third argument(specific test case numbers) exists
         if self.args[2]:
             try:
                 toParse = str(self.args[2])
@@ -163,6 +249,7 @@ class CLI():
                     if len(splited) == 2:
                         # Check if values for range are valid
                         self.checkRange(splited)
+                        # Set which test cases to test
                         self.setTestCases(splited)
                     else:
                         self.invalidTestCaseRange()
@@ -180,18 +267,23 @@ class CLI():
                 # Third type, e.g. 4,5,7,10
                 elif "," in toParse:
                     splited = toParse.split(",")
+                    # Check if arguments are valid
                     for i in splited:
                         self.isInt(i)
                     # If all numbers are ok create test case list
-                    self.testCases = splited
-                    print self.testCases
+                    self.testCases = map(int, splited)
+
+                # Only one test case
+                elif self.isInt(self.args[2]):
+                    self.testCases.append(int(self.args[2]))
 
                 # None of the types given, error
                 else:
                     self.invalidTestCaseRange()
 
             except ValueError:
-                print "Not a valid string!"
+                puts(colored.red("Not a valid string for test case numbers!"))
+                sys.exit(1)
 
     def chechLastChar(self, toParse):
         try:
@@ -203,12 +295,13 @@ class CLI():
     def isInt(self, i):
         try:
             int(i)
+            return True
         except ValueError:
             self.invalidTestCaseRange()
 
     def invalidTestCaseRange(self):
-        print "Invalid Test Case number format!"
-        exit(1)
+        puts(colored.red("Invalid Test Case number format!"))
+        sys.exit(1)
 
     def checkRange(self, split):
         try:
@@ -216,21 +309,10 @@ class CLI():
             int(split[1])
         except ValueError:
             print "Incorrect range for Test Cases given!"
-            exit(1)
+            sys.exit(1)
 
     def setTestCases(self, split):
         self.testCases = range(int(split[0]), int(split[1]) + 1)
-        print self.testCases
-
-    def compareFiles(self, first, second):
-        if (filecmp.cmp(first, second)):
-            return 1
-        return 0
-
-    def getProblemName(self, path):
-        parts = path.split("/")
-        print parts
-        return parts[-1]
 
     def getFullPath(self, path):
         # fix given path
@@ -241,6 +323,45 @@ class CLI():
             return path
         else:
             return os.path.abspath(path)
+
+    def checkToken(self, tokenInput):
+        response = requests.post(self.pathAssociateToken + tokenInput)
+        # Check if status not 200
+        if response.status_code != requests.codes.ok:
+            puts(colored.red("Bad request!2"))
+            sys.exit(1)
+        data = response.json()
+
+        # Check if wrong token
+        if 'errorMessage' in data.keys():
+            puts(colored.red("Invalid token!"))
+            sys.exit(1)
+
+        # Token is ok
+        if data['success']:
+            puts(colored.green("Token is valid!\n"))
+            formatNum = len(data['email']) + 8
+            puts(" " * (formatNum / 3) + colored.yellow("Account info"))
+
+            nameLen = len(data['name']) + 8
+            puts("|" + "=" * formatNum + "|")
+            # puts(colored.yellow("\tAccount info"))
+            puts("| " + colored.yellow("Name: ") + " " + data['name'] + " " * (
+                formatNum - nameLen) + "|\n| " + colored.yellow(
+                "Email: ") + data['email'] + "|")
+            puts("|" + "=" * formatNum + "|")
+            puts()
+            return True
+
+    # Get the extension of the users file (executable)
+    def getFileType(self, pathToFile):
+        fileName = ''
+        if "/" in pathToFile:
+            fileName = pathToFile.split("/")[-1]
+        elif "\\" in pathToFile:
+            fileName = pathToFile.split("\\")[-1]
+        type = fileName.split(".")[-1]
+        self.fileType = type
 
 
 cli = CLI()
