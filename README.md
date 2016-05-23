@@ -90,7 +90,7 @@ If the token is valid, it will be **saved to your homedirectory(~/) in the ".cod
 The **main file** that does all the testing work.
 
 
-######~/".codeassign"
+######"~/.codeassign"
 
 This file is made after the first usage of CLI and consists of two (2) lines:
 
