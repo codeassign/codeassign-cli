@@ -25,6 +25,8 @@ class CLI():
         self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/'
         # POST AssociateConsoleToken
         self.pathAssociateToken = 'http://api.codeassign.com/AssociateConsoleToken/'
+        # Path to .codeassign file
+        self.tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
 
         # Problem id
         self.problemId = ''
@@ -39,6 +41,10 @@ class CLI():
 
         # List of outputs to evaluate
         self.outputList = []
+        # Check if user wants more or less info
+        self.showInfo = False
+        # Additional options used in argument
+        self.options = False
 
         # Get all arguments from command line
         self.args = Args()
@@ -57,21 +63,20 @@ class CLI():
 
     # Check if token is already created. If no token found prompt user for input
     def tokenExists(self):
-        tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
 
         # Token already exists
-        if os.path.exists(tokenPath):
-            if os.path.isfile(tokenPath):
-                tokenFile = open(tokenPath, 'r')
+        if os.path.exists(self.tokenPath):
+            if os.path.isfile(self.tokenPath):
+                tokenFile = open(self.tokenPath, 'r')
                 line = tokenFile.readline()
                 # Check if file is properly formatted
                 if len(line.split("=")) != 2:
-                    puts(colored.red("Invalid token format in " + tokenPath))
+                    puts(colored.red("Invalid token format in " + self.tokenPath))
                     sys.exit(1)
-                token = line.split("=")[1]
+                token = line.split("=")[1].rstrip()
                 self.checkToken(token)
                 # Not sure if needed for pretty output
-                # puts(colored.yellow("Found existing token in: \"" + tokenPath + "\""))
+                # puts(colored.yellow("Found existing token in: \"" + self.tokenPath + "\""))
                 self.token = "?token=" + token
                 tokenFile.close()
         # Create new token in ~/.codeassign
@@ -80,11 +85,14 @@ class CLI():
             tokenInput = raw_input()
             self.checkToken(tokenInput)
             self.token = "?token=" + tokenInput
-            tokenFile = open(tokenPath, 'w')
-            stringToWrite = "APP_TOKEN=" + tokenInput
-            tokenFile.write(stringToWrite)
-            puts(colored.green("Token saved to: \"" + tokenPath + "\"\n"))
-            tokenFile.close()
+            self.createToken(tokenInput)
+
+    def createToken(self, tokenInput):
+        tokenFile = open(self.tokenPath, 'w')
+        stringToWrite = "APP_TOKEN=" + tokenInput
+        tokenFile.write(stringToWrite)
+        puts(colored.green("Token saved to: \"" + self.tokenPath + "\"\n"))
+        tokenFile.close()
 
     def evaluate(self, ):
 
@@ -197,7 +205,9 @@ class CLI():
                 puts(colored.red(strings.invalidProblemId))
                 sys.exit(1)
             else:
-                puts(colored.green(strings.problemIdOk))
+                # Show if user wants more info (LOG=True)
+                if self.showInfo:
+                    puts(colored.green(strings.problemIdOk))
             response.encoding = "utf8"
             data = response.json()
             return data
@@ -207,6 +217,26 @@ class CLI():
             sys.exit(1)
 
     def checkArguments(self):
+        # Check for additional options and modify internal values accordingly
+        if "-" in self.args[len(self.args) - 1]:
+            if self.args[-1] == "-less":
+                self.modifyLog("\nLOG=False", False)
+                self.options = True
+            if self.args[-1] == "-more":
+                self.modifyLog("\nLOG=True", True)
+                self.options = True
+        else:
+            tokenFile = open(self.tokenPath, 'r')
+            for i, line in enumerate(tokenFile):
+                if i == 1:
+                    value = line.split("=")[1].rstrip()
+                    if value == "True":
+                        self.showInfo = True
+                    elif value == "False":
+                        self.showInfo = False
+                    else:
+                        pass
+
         # Check if first argument(problemId) is a valid number
         try:
             self.problemId = int(self.args[0])
@@ -225,7 +255,9 @@ class CLI():
         if pathToFile:
             if os.path.exists(pathToFile):
                 if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
-                    puts(colored.green(strings.fileValid))
+                    # Show if user wants more info (LOG=True)
+                    if self.showInfo:
+                        puts(colored.green(strings.fileValid))
                     self.pathToExecutable = pathToFile
                 else:
                     puts(colored.red(strings.notAFile))
@@ -241,7 +273,7 @@ class CLI():
             sys.exit(1)
 
         # Check if third argument(specific test case numbers) exists
-        if self.args[2]:
+        if self.args[2] and ((len(self.args) >= 4) or not self.options):
             try:
                 toParse = str(self.args[2])
                 # Remove last char if not int
@@ -291,6 +323,18 @@ class CLI():
                 puts(colored.red("Not a valid string for test case numbers!"))
                 sys.exit(1)
 
+    def modifyLog(self, stringBool, boolValue):
+        tokenFile = open(self.tokenPath, 'r')
+        list = []
+        list.append(tokenFile.readline().rstrip())
+        list.append(tokenFile.readline().rstrip())
+        list[1] = stringBool
+        tokenFile.close()
+        tokenFile = open(self.tokenPath, 'w')
+        tokenFile.writelines(list)
+        tokenFile.close()
+        self.showInfo = boolValue
+
     def chechLastChar(self, toParse):
         try:
             int(toParse[-1])
@@ -314,7 +358,7 @@ class CLI():
             int(split[0])
             int(split[1])
         except ValueError:
-            puts("Incorrect range for Test Cases given!")
+            puts(colored.red("Parameter sequence or format is wrong!"))
             sys.exit(1)
 
     def setTestCases(self, split):
@@ -338,17 +382,16 @@ class CLI():
             sys.exit(1)
 
         data = response.json()
-
-        # Modify encoding of account info
-        self.modifyEncoding(data)
-
         # Check if wrong token
         if 'errorMessage' in data.keys():
             puts(colored.red("Invalid token!"))
             sys.exit(1)
 
+        # Modify encoding of account info
+        self.modifyEncoding(data)
+
         # Token is ok
-        if data['success']:
+        if data['success'] and self.showInfo:
             puts(colored.green("Token is valid!\n"))
             formatNum = len(data['email']) + 8
             puts(" " * (formatNum / 3) + colored.yellow("Account info"))
