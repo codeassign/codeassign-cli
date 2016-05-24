@@ -42,7 +42,7 @@ class CLI():
         # List of outputs to evaluate
         self.outputList = []
         # Check if user wants more or less info
-        self.showInfo = False
+        self.showInfo = True
         # Additional options used in argument
         self.options = False
 
@@ -70,27 +70,40 @@ class CLI():
                 tokenFile = open(self.tokenPath, 'r')
                 line = tokenFile.readline()
                 # Check if file is properly formatted
-                if len(line.split("=")) != 2:
-                    puts(colored.red("Invalid token format in " + self.tokenPath))
-                    sys.exit(1)
-                token = line.split("=")[1].rstrip()
-                self.checkToken(token)
-                # Not sure if needed for pretty output
-                # puts(colored.yellow("Found existing token in: \"" + self.tokenPath + "\""))
-                self.token = "?token=" + token
-                tokenFile.close()
+                if not line.rstrip():
+                    puts(colored.yellow('No token file detected. Please enter your token: '))
+                    self.promptNewToken()
+                elif len(line.split("=")) != 2:
+                    puts(colored.red("No valid token found!" + self.tokenPath))
+                    puts(colored.yellow("Please enter token: "))
+                    self.promptNewToken()
+                else:
+                    token = line.split("=")[1].rstrip()
+                    self.checkToken(token)
+                    # Not sure if needed for pretty output
+                    # puts(colored.yellow("Found existing token in: \"" + self.tokenPath + "\""))
+                    self.token = "?token=" + token
+                    tokenFile.close()
         # Create new token in ~/.codeassign
         else:
             puts(colored.yellow('No token file detected. Please enter your token: '))
-            tokenInput = raw_input()
-            self.checkToken(tokenInput)
-            self.token = "?token=" + tokenInput
-            self.createToken(tokenInput)
+            self.promptNewToken()
+
+    def promptNewToken(self):
+        tokenInput = raw_input().rstrip()
+        self.checkToken(tokenInput)
+        self.token = "?token=" + tokenInput
+        self.createToken(tokenInput)
 
     def createToken(self, tokenInput):
         tokenFile = open(self.tokenPath, 'w')
         stringToWrite = "APP_TOKEN=" + tokenInput
         tokenFile.write(stringToWrite)
+        tokenFile.close()
+        if self.showInfo:
+            self.modifyLog("\nLOG=True", self.showInfo)
+        else:
+            self.modifyLog("\nLOG=False", self.showInfo)
         puts(colored.green("Token saved to: \"" + self.tokenPath + "\"\n"))
         tokenFile.close()
 
@@ -102,7 +115,6 @@ class CLI():
             testCaseId = input['id']
 
             try:
-                process = 0
                 if self.fileType == "exe":
                     process = subprocess.Popen(self.pathToExecutable, stdin=subprocess.PIPE,
                                                stdout=subprocess.PIPE).communicate(input['input'])
@@ -181,7 +193,7 @@ class CLI():
     def checkJsonStatusCode(self, output):
         if "statusCode" in output.keys():
             if output['statusCode'] == requests.codes.unauthorized:
-                puts(colored.red("Invalid token!"))
+                puts(colored.red("Invalid token!2"))
                 sys.exit(1)
             elif output['statusCode'] != requests.codes.ok:
                 puts(colored.red("Bad request!"))
@@ -226,7 +238,10 @@ class CLI():
                 self.modifyLog("\nLOG=True", True)
                 self.options = True
         else:
-            tokenFile = open(self.tokenPath, 'r')
+            if os.path.exists(self.tokenPath) and os.path.isfile(self.tokenPath):
+                tokenFile = open(self.tokenPath, 'r')
+            else:
+                tokenFile = open(self.tokenPath, 'w+')
             for i, line in enumerate(tokenFile):
                 if i == 1:
                     value = line.split("=")[1].rstrip()
@@ -250,25 +265,30 @@ class CLI():
             sys.exit(1)
 
         # Check if second argument(executable) is a valid file
-        pathToFile = self.getFullPath(self.args[1])
-        self.getFileType(pathToFile)
-        if pathToFile:
-            if os.path.exists(pathToFile):
-                if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
-                    # Show if user wants more info (LOG=True)
-                    if self.showInfo:
-                        puts(colored.green(strings.fileValid))
-                    self.pathToExecutable = pathToFile
+        if self.args[1]:
+            pathToFile = self.getFullPath(self.args[1])
+            self.getFileType(pathToFile)
+            if pathToFile:
+                if os.path.exists(pathToFile):
+                    if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
+                        # Show if user wants more info (LOG=True)
+                        if self.showInfo:
+                            puts(colored.green(strings.fileValid))
+                        self.pathToExecutable = pathToFile
+                    else:
+                        puts(colored.red(strings.notAFile))
+                        puts(colored.yellow(strings.commandExample))
+                        sys.exit(1)
                 else:
-                    puts(colored.red(strings.notAFile))
+                    puts(colored.red(strings.noPathExists))
                     puts(colored.yellow(strings.commandExample))
                     sys.exit(1)
             else:
-                puts(colored.red(strings.noPathExists))
+                puts(colored.red(strings.noPathGiven))
                 puts(colored.yellow(strings.commandExample))
                 sys.exit(1)
         else:
-            puts(colored.red(strings.noPathGiven))
+            puts(colored.red("Please enter path to the executable!"))
             puts(colored.yellow(strings.commandExample))
             sys.exit(1)
 
@@ -324,7 +344,10 @@ class CLI():
                 sys.exit(1)
 
     def modifyLog(self, stringBool, boolValue):
-        tokenFile = open(self.tokenPath, 'r')
+        if os.path.exists(self.tokenPath) and os.path.isfile(self.tokenPath):
+            tokenFile = open(self.tokenPath, 'r')
+        else:
+            tokenFile = open(self.tokenPath, 'w+')
         list = []
         list.append(tokenFile.readline().rstrip())
         list.append(tokenFile.readline().rstrip())
