@@ -109,6 +109,9 @@ class CLI():
                 elif self.fileType == "jar":
                     process = subprocess.Popen(['java', '-jar', self.pathToExecutable], stdin=subprocess.PIPE,
                                                stdout=subprocess.PIPE).communicate(input['input'])
+                elif self.fileType == "py":
+                    process = subprocess.Popen(['python', self.pathToExecutable], stdin=subprocess.PIPE,
+                                               stdout=subprocess.PIPE).communicate(input['input'])
                 else:
                     puts(colored.red("Given type executable is not supported!"))
                     puts(colored.yellow("Currently supported file extensions: \".exe\", \".jar\""))
