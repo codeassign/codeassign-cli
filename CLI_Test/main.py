@@ -3,6 +3,9 @@ import os
 import subprocess
 import sys
 
+import operator
+
+import collections
 import requests
 from clint.arguments import Args
 from clint.textui import puts, colored
@@ -15,7 +18,7 @@ class CLI():
 
         # sys.path.insert(0, os.path.abspath('..'))
 
-        # Used if user wants to test specific test cases (not all)
+        # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
         # GET problem path
         self.pathGetProblem = 'http://api.codeassign.com/Problem/'
@@ -25,8 +28,11 @@ class CLI():
         self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/'
         # POST AssociateConsoleToken
         self.pathAssociateToken = 'http://api.codeassign.com/AssociateConsoleToken/'
+
         # Path to .codeassign file
         self.tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
+        # Path to log file
+        self.logFilePath = os.path.join(os.getcwd(), "cae_log.txt")
 
         # Problem id
         self.problemId = ''
@@ -45,6 +51,10 @@ class CLI():
         self.showInfo = True
         # Additional options used in argument
         self.options = False
+        # Wrote to log file
+        self.logFileBool = False
+        # First time log
+        self.firstLog = True
 
         # Get all arguments from command line
         self.args = Args()
@@ -107,10 +117,8 @@ class CLI():
         puts(colored.green("Token saved to: \"" + self.tokenPath + "\"\n"))
         tokenFile.close()
 
+    # Test the code with input
     def evaluate(self, ):
-
-        # Test the code with input
-        # os.system("Test.jar")
         for input in self.values:
             testCaseId = input['id']
 
@@ -137,31 +145,85 @@ class CLI():
                 sys.exit(1)
 
         output = self.POSTEvaluate()
-
         # Check if something is wrong
         self.checkJsonStatusCode(output)
-
         # Check if tests passed evaluation
         passed = 0
-        # Used for checking how many tests were really tested (user put too many)
+        # Used for checking how many tests were really tested (if user put too many)
         numberOfTests = 0
+
+        # Sort the test cases
+        testCaseDict = {}
+        # Count used only for output log formatting
+        count = 1
+        # Another count ( yeah ) , for the right output number when there are only specific test cases, used for log
+        countSpecificFile = 1
+        for testCase in output['testCases']:
+            # Add new dictionary value, e.g. "1 : True"
+            testCaseDict[testCase['id']] = testCase['accepted']
+
+            # Write test status to log file if LOG=True(-more is used)
+            if len(self.testCases) > 0:
+                if self.showInfo and testCase['id'] in self.testCases:
+                    self.writeLog(countSpecificFile, testCase)
+                countSpecificFile += 1
+            else:
+                if self.showInfo:
+                    self.writeLog(count, testCase)
+                    count += 1
+
+
+        # Something was written to file
+        if count > 1 or countSpecificFile > 0:
+            self.logFileBool = True
+
+        # Count specific, same as the above count, this one is used for command line output
+        countSpecificOutput = 1
+
+        # Check if there are specific test cases given by user
         if len(self.testCases) == 0:
             # Testing all available test cases
-            for testCase in output['testCases']:
+            for key in sorted(testCaseDict):
                 numberOfTests += 1
-                if self.checkTestCase(testCase):
+                if self.checkTestCase(numberOfTests, testCaseDict[key]):
                     passed += 1
             puts()
-        # Testing specific test cases
+        # Testing only specific test cases
         else:
-            for testCase in output['testCases']:
-                if testCase['id'] in self.testCases:
+            for key in sorted(testCaseDict):
+                if key in self.testCases:
                     numberOfTests += 1
-                    if self.checkTestCase(testCase):
+                    if self.checkTestCase(countSpecificOutput, testCaseDict[key]):
                         passed += 1
+                countSpecificOutput += 1
             puts()
 
         self.printFinalResult(output, passed, numberOfTests)
+
+    def writeLog(self, count, testCase):
+        # Used for formating
+        separator = "=================================\n\n"
+        # Format output for log file
+        if testCase['accepted']:
+            header = '>>>Test case number ' + str(count) + ": " + "Passed!<<<\nInput:\n"
+        else:
+            header = '>>>Test case number ' + str(count) + ": " + "Failed!<<<\n\nInput:\n"
+        testCaseInput = testCase['input'].rstrip() + "\n\n"
+        # Separator
+        userOutputText = "Your output:\n"
+        userOutput = testCase['userOutput'].rstrip() + "\n\n"
+        reqOutputText = "Required output:\n"
+        reqOutput = testCase['requiredOutput'].rstrip() + "\n\n"
+        # Separator
+        if self.firstLog:
+            logFile = open(self.logFilePath, 'w')
+            self.firstLog = False
+            print "overw"
+        else:
+            logFile = open(self.logFilePath, 'a')
+        fullLog = header + testCaseInput + separator + userOutputText + userOutput + reqOutputText + reqOutput + separator + "\n"
+        logFile.write(fullLog)
+        logFile.close()
 
     def POSTEvaluate(self):
         response = requests.post(self.pathSetPostEvaluate + str(self.problemId) + str(self.token), json=self.outputList)
@@ -175,19 +237,26 @@ class CLI():
         return data
 
     def printFinalResult(self, output, passed, numberOfTests):
+        # Given test cases dont exist
         if numberOfTests == 0 and len(self.testCases) > 0:
             puts(colored.red("Given test cases " + str(self.testCases) + " don't exist for problem with id " + str(
                 self.problemId) + "!"))
             sys.exit(1)
+        # No tests found
         elif numberOfTests == 0:
             puts(colored.red("No test cases found for problem with id " + str(self.problemId) + "!"))
             sys.exit(1)
+
+        # Log was created and LOG=True(-more is used)
+        if self.logFileBool and self.showInfo:
+            puts(colored.yellow("Check log file \"cae_log\" in your working directory for more detailed info!"))
+
         # All tests passed
         if passed >= numberOfTests:
             puts(colored.green("\nAll (" + str(numberOfTests) + ") test/s passed! Well done!"))
         # All tests failed
         elif passed <= 0:
-            puts(colored.red("All (" + str(numberOfTests) + ") test/s failed! Try again!"))
+            puts(colored.red("\nAll (" + str(numberOfTests) + ") test/s failed! Try again!"))
         # Some test failed
         else:
             puts("\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases'])))
@@ -202,13 +271,12 @@ class CLI():
                 puts(colored.red("Bad request!"))
                 sys.exit(1)
 
-    def checkTestCase(self, testCase):
-        passed = 0
-        if testCase['accepted']:
-            puts('Test case number ' + str(testCase['id']) + ": " + colored.green("Passed!"))
+    def checkTestCase(self, key, value):
+        if value:
+            puts('Test case number ' + str(key) + ": " + colored.green("Passed!"))
             return True
         else:
-            puts('Test case number ' + str(testCase['id']) + ": " + colored.red("Failed!"))
+            puts('Test case number ' + str(key) + ": " + colored.red("Failed!"))
             return False
 
     # Get test cases for the given problemId
