@@ -158,20 +158,21 @@ class CLI():
         count = 1
         # Another count ( yeah ) , for the right output number when there are only specific test cases, used for log
         countSpecificFile = 1
+        # Dictionary keys
+        i = 1
         for testCase in output['testCases']:
             # Add new dictionary value, e.g. "1 : True"
-            testCaseDict[testCase['id']] = testCase['accepted']
-
+            testCaseDict[i] = testCase['accepted']
+            i += 1
             # Write test status to log file if LOG=True(-more is used)
             if len(self.testCases) > 0:
-                if self.showInfo and testCase['id'] in self.testCases:
+                if self.showInfo and (countSpecificFile in self.testCases):
                     self.writeLog(countSpecificFile, testCase)
                 countSpecificFile += 1
             else:
                 if self.showInfo:
                     self.writeLog(count, testCase)
                     count += 1
-
 
         # Something was written to file
         if count > 1 or countSpecificFile > 0:
@@ -218,7 +219,6 @@ class CLI():
         if self.firstLog:
             logFile = open(self.logFilePath, 'w')
             self.firstLog = False
-            print "overw"
         else:
             logFile = open(self.logFilePath, 'a')
         fullLog = header + testCaseInput + separator + userOutputText + userOutput + reqOutputText + reqOutput + separator + "\n"
