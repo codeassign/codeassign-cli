@@ -487,9 +487,9 @@ class CLI():
         # Token is ok
         if data['success'] and self.showInfo:
             puts(colored.green("Token is valid!\n"))
-            formatNum = len(data['email']) + 8
+            formatNum = len(data['email'].decode('utf8')) + 8
             puts(" " * (formatNum / 3) + colored.yellow("Account info"))
-            nameLen = len(data['name']) + 8
+            nameLen = len(data['name'].decode('utf8')) + 8
             puts("|" + "=" * formatNum + "|")
             # puts(colored.yellow("\tAccount info"))
 
@@ -501,8 +501,8 @@ class CLI():
             return True
 
     def modifyEncoding(self, data):
-        data['name'] = data['name'].encode('cp1250')
-        data['email'] = data['email'].encode('cp1250')
+        data['name'] = data['name'].encode('utf8')
+        data['email'] = data['email'].encode('utf8')
 
     # Get the extension of the users file (executable)
     def getFileType(self, pathToFile):
