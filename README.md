@@ -7,13 +7,15 @@ This document describes the installation and usage of the CodeAssign CLI.
 
 The CLI is used for testing some or all test cases of a given problem.
 
+After you installed `cae` on your computer be sure to checkout our [Hello World! Guide](http://codeassign.com/guide). And if you are having trouble with running your solution of [Hello World!](http://codeassign.com/groups/39/problems/87) problem, be sure to checkout [our solutions](https://github.com/codeassign/codeassign-cli/tree/master/hello_world) in **6** different languages: **Python2**, **Python3**, **C**, **C++**, **Ruby**, **Bash** and **Java**.
+
 ## Installation
 
-CodeAssign CLI works on Windows and Linux. You don't need any dependantcies to run our CLI.
+CodeAssign CLI works on Windows and Linux. We created stand-alone executables for these platforms so you don't have to worry about any dependantcies. Please, follow instructions for your platform. If your platform isn't listed or stand-alone executable version doesn't work on your computer, checkout universal instructions.
 
 ### Windows
 
-Just download `cae.exe` [here](https://github.com/codeassign/codeassign-cli/raw/master/CLI_Windows/cae.exe). You can find this file in [`CAE_windows`](https://github.com/codeassign/codeassign-cli/tree/master/CLI_windows) folder of this project.
+Just download `cae.exe` [here](https://github.com/codeassign/codeassign-cli/raw/master/windows/cae.exe). You can find this file in [`windows`](https://github.com/codeassign/codeassign-cli/tree/master/windows) folder of this project.
 
 Your `cae.exe` is now probably saved in your `C:\Users\<YOUR USERNAME>\Downloads` folder. If you now open `cmd.exe` in this folder, you will be able to run `cae` command. And if you do this you will get this message: `No arguments given! Use "cae help" for instructions.`, and that's **OK**!
 
@@ -52,25 +54,50 @@ The above guide explains simplest and minimum steps that you have to do before r
 
 1. [Download](https://github.com/codeassign/codeassign-cli/archive/master.zip) or clone this project.
 
-2. Copy `CAE_linux` somewhere safe. We suggest your `/usr/local/codeassign` folder:
+2. Copy `linux/cae` in `/usr/local/bin` folder
 
   ```
-  $ sudo cp -R CAE_linux/ /usr/local/codeassign
+  $ sudo cp linux/cae /usr/local/bin
   ```
 
 3. Make sure `cae` is executable
 
   ```
-  $ sudo chmod +x /usr/local/codeassign/cae
+  $ sudo chmod +x /usr/local/bin/cae
   ```
 
-4. Create a link in your `/usr/local/bin` folder:
+4. You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
+
+
+### Universal
+
+If your platform isn't listed above or the precompiled version we provide doesn't work on your computer, please follow these instructions.
+
+1. Install [python2.7](https://www.python.org/downloads/).
+
+2. Install [pip](https://pypi.python.org/pypi/pip).
+
+3. Using `pip` install dependantcies:
 
   ```
-  $ sudo ln -s /usr/local/codeassign/cae /usr/local/bin/cae
+  $ pip install requests
+  $ pip install clint
   ```
+4. You should now be able to run `cae.py`.
 
 5. You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
+
+#### Optional
+
+After completing **Universal** steps above you can create stand-alone executable for your system. First install `pyinstaller` using `pip`:
+
+```
+$ pip install pyinstaller
+```
+
+Then for Linux or OSX run `build_linux.sh` script and for Windows run `build_windows.bat` script.
+
+Your executable will be present in `linux` or `windows` folder.
 
 ## Command
 
