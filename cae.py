@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # coding=utf-8
 import os
 import subprocess
@@ -10,7 +11,17 @@ import requests
 from clint.arguments import Args
 from clint.textui import puts, colored
 
-import strings
+commandExample = "Command example: \"cae 576 /test/main.exe 1,2,3\"\nLast argument is optional and can be in formats: \"1,2,3\" \"3-7\" \"2..5\", tests all if left blank."
+noPathGiven = "No path given. Please enter path to the testing file!"
+noPathExists = "Given path does not exist!"
+notAFile = "Given path is not a file!"
+fileValid = "File is valid!"
+firstArgumentInvalid = "First argument must be the problem id!"
+connectionError = "Connection error!"
+invalidProblemId = "Invalid problem Id! (Error 404)"
+problemIdOk = "Problem id OK!"
+encodingISO = 'ISO-8859-1'
+encodingUTF8 = 'utf_8'
 
 
 class CLI():
@@ -123,19 +134,12 @@ class CLI():
             testCaseId = input['id']
 
             try:
-                if self.fileType == "exe":
-                    process = subprocess.Popen(self.pathToExecutable, stdin=subprocess.PIPE,
-                                               stdout=subprocess.PIPE).communicate(input['input'])
-                elif self.fileType == "jar":
+                if self.fileType == "jar":
                     process = subprocess.Popen(['java', '-jar', self.pathToExecutable], stdin=subprocess.PIPE,
                                                stdout=subprocess.PIPE).communicate(input['input'])
-                elif self.fileType == "py":
-                    process = subprocess.Popen(['python', self.pathToExecutable], stdin=subprocess.PIPE,
-                                               stdout=subprocess.PIPE).communicate(input['input'])
                 else:
-                    puts(colored.red("Given type executable is not supported!"))
-                    puts(colored.yellow("Currently supported file extensions: \".exe\", \".jar\""))
-                    sys.exit(1)
+                    process = subprocess.Popen([self.pathToExecutable], stdin=subprocess.PIPE,
+                                               stdout=subprocess.PIPE).communicate(input['input'])
 
                 output = process[0]
                 data = self.formatOutput(output, testCaseId)
@@ -285,18 +289,18 @@ class CLI():
             response = requests.get(self.pathGetTestValues + str(self.problemId))
             # Wrong problem id
             if not response.status_code == requests.codes.ok:
-                puts(colored.red(strings.invalidProblemId))
+                puts(colored.red(invalidProblemId))
                 sys.exit(1)
             else:
                 # Show if user wants more info (LOG=True)
                 if self.showInfo:
-                    puts(colored.green(strings.problemIdOk))
+                    puts(colored.green(problemIdOk))
             response.encoding = "utf8"
             data = response.json()
             return data
 
         except requests.ConnectionError:
-            puts(colored.red(strings.connectionError))
+            puts(colored.red(connectionError))
             sys.exit(1)
 
     def checkArguments(self):
@@ -329,10 +333,10 @@ class CLI():
         except ValueError:
             #  Help command entered
             if self.args[0] == "help":
-                puts(colored.yellow(strings.commandExample))
+                puts(colored.yellow(commandExample))
             # Invalid input
             else:
-                puts(colored.red(strings.firstArgumentInvalid))
+                puts(colored.red(firstArgumentInvalid))
             sys.exit(1)
 
         # Check if second argument(executable) is a valid file
@@ -344,23 +348,23 @@ class CLI():
                     if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
                         # Show if user wants more info (LOG=True)
                         if self.showInfo:
-                            puts(colored.green(strings.fileValid))
+                            puts(colored.green(fileValid))
                         self.pathToExecutable = pathToFile
                     else:
-                        puts(colored.red(strings.notAFile))
-                        puts(colored.yellow(strings.commandExample))
+                        puts(colored.red(notAFile))
+                        puts(colored.yellow(commandExample))
                         sys.exit(1)
                 else:
-                    puts(colored.red(strings.noPathExists))
-                    puts(colored.yellow(strings.commandExample))
+                    puts(colored.red(noPathExists))
+                    puts(colored.yellow(commandExample))
                     sys.exit(1)
             else:
-                puts(colored.red(strings.noPathGiven))
-                puts(colored.yellow(strings.commandExample))
+                puts(colored.red(noPathGiven))
+                puts(colored.yellow(commandExample))
                 sys.exit(1)
         else:
             puts(colored.red("Please enter path to the executable!"))
-            puts(colored.yellow(strings.commandExample))
+            puts(colored.yellow(commandExample))
             sys.exit(1)
 
         # Check if third argument(specific test case numbers) exists
