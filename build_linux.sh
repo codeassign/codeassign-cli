@@ -1,2 +1,3 @@
-cxfreeze main.py --target-dir dist --include-modules requests
-
+pyinstaller cae.py --distpath linux --onefile
+rm -rf build
+rm cae.spec
