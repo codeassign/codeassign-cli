@@ -3,9 +3,50 @@ Command line interface for CodeAssign
 
 ## Overview
 
-This document describes the usage of the CodeAssign CLI interface.
+This document describes the installation and usage of the CodeAssign CLI.
 
 The CLI is used for testing some or all test cases of a given problem.
+
+## Installation
+
+CodeAssign CLI works on Windows and Linux. You don't need any dependantcies to run our CLI.
+
+### Windows
+
+Just download `cae.exe` [here](https://github.com/codeassign/codeassign-cli/raw/master/CLI_Windows/cae.exe). You can find this file in [`CAE_windows`](https://github.com/codeassign/codeassign-cli/tree/master/CLI_windows) folder of this project.
+
+Your `cae.exe` is now probably saved in your `C:\Users\<YOUR USERNAME>\Downloads` folder. If you now open `cmd.exe` in this folder, you will be able to run `cae` command. And if you do this you will get this message: `No arguments given! Use "cae help" for instructions.`, and that's **OK**!
+
+You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
+
+##### Global installation
+
+The above guide explains simplest and minimum steps that you have to do before running `cae` command. But now your `CMD` only knows about `cae` command if you position yourself in the folder where `cae` is located, i.e. probably your `C:\Users\<YOUR USERNAME>\Downloads`. If you want your `CMD` to know about your `cae` command in the **whole system** (i.e. you will be able to run `cae` anywhere in your `CMD`), this is what you need to do:
+
+1. Copy `cae.exe` somewhere safe. We suggest you to create a `CodeAssign` folder in your `C:\` drive and place `cae.exe` there. So now `cae.exe` will be located in `C:\CodeAssign\cae.exe`.
+
+2. Open your *Control Panel* and go to *System and Security* > *System*.
+
+3. On the left you will see *Advanced system settings*. Click on that and new window should open.
+
+4. Now click on *Advanced* tab, and there at the bottom of the window you should see *Environment Variables...* button. Click on that button and new window should open.
+
+5. In this window you should see two sections: `User variables for <YOUR USERNAME>` and `System variables`. In this second section find and select variable called `Path`.
+
+6. With the variable `Path` selected click *Edit...* button (new window should open).
+
+7. Depending on Windows version you have you will see either: nice table with some paths, or old and dirty text filed with paths separated with `;`:
+
+    * If you see a table, click on the *New* button and enter `C:\CodeAssign\`.
+    * If you see old and dirty text field enter: `;C:\CodeAssign\`. **DON'T FORGET `;` BEFORE YOUR PATH**.
+
+8. Click *OK* as many times as you can to exit from all windows.
+
+9. Restart your PC.
+
+10. Open your `CMD` and type `cae`. You should again see this message: `No arguments given! Use "cae help" for instructions.`, and that's **OK**!
+
+11. You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
 
 ## Command
 
@@ -15,7 +56,7 @@ The keyword used is `cae` (**C**ode**A**ssign **e**valuate):
 cae {problemId} {pathToExecutable} {testCaseIds}(optional)  {additionalOptions}(optional)
 ```
 
-### Examples:
+#### Examples:
 
 ```
 $ cae 476 main/main.exe
