@@ -48,6 +48,30 @@ The above guide explains simplest and minimum steps that you have to do before r
 
 11. You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
 
+### Linux
+
+1. [Download](https://github.com/codeassign/codeassign-cli/archive/master.zip) or clone this project.
+
+2. Copy `CAE_linux` somewhere safe. We suggest your `/usr/local/codeassign` folder:
+
+  ```
+  $ sudo cp -R CAE_linux/ /usr/local/codeassign
+  ```
+
+3. Make sure `cae` is executable
+
+  ```
+  $ sudo chmod +x /usr/local/codeassign/cae
+  ```
+
+4. Create a link in your `/usr/local/bin` folder:
+
+  ```
+  $ sudo ln -s /usr/local/codeassign/cae /usr/local/bin/cae
+  ```
+
+5. You are now ready to test your [Hello World!](http://codeassign.com/groups/39/problems/87) solution. Be sure to check our [Hello World! Guide](http://codeassign.com/guide) if you have any trouble solving and evaluating this example.
+
 ## Command
 
 The keyword used is `cae` (**C**ode**A**ssign **e**valuate):
