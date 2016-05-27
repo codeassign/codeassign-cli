@@ -90,26 +90,27 @@ See **Python** but insted of `python` command you use `ruby` command and `hello_
 
 ## Java
 
-I you have big project, you can create `.jar` file which you should be able to run with `java -jar MySolution.jar`. Just run `cae`:
+Java projects can be run if they are packaged into a single executable JAR which you can run with `java -jar *yourjar.jar*`.
+
+Assuming your classes are in a single folder and the main class is called HelloWorld, you can build this by running
 
 ```
-$ cae 87 HelloWorld.jar
+javac *.java;
+jar cfe MySolution.jar HelloWorld *.class;
 ```
 
-If you have single class then first compile `javac HelloWorld.java`. Then create a script which will run this class for you:
-
-Linux:
+If `java -jar MySolution.jar` now properly works, add the executable permission to the jar and test it with `cae`.
 
 ```
-#!/bin/bash
-java HelloWorld
+chmod +x MySolution.jar;
+cae 87 MySolution.jar;
 ```
 
-Windows:
+You can package the whole process into a simple compile-build-test script:
 
 ```
-@ECHO OFF
-java HelloWorld
+javac *.java;
+jar cfe MySolution.jar HelloWorld *.class;
+chmod +x MySolution.jar;
+cae 87 MySolution.jar;
 ```
-
-You can also compile multiple files and write a script which will run your main class.
