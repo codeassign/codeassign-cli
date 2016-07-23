@@ -1,3 +1,2 @@
 #!/bin/bash
-read name
-echo "Hello, $name!"
+echo "Hello, World"

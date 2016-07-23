@@ -14,7 +14,7 @@ from clint.textui import puts, colored
 commandExample = "Command example: \"cae 576 /test/main.exe 1,2,3\"\nLast argument is optional and can be in formats: \"1,2,3\" \"3-7\" \"2..5\", tests all if left blank."
 noPathGiven = "No path given. Please enter path to the testing file!"
 noPathExists = "Given path does not exist!"
-notAFile = "Given path is not a file!"
+notAFile = "Given path is not a file or an executable!"
 fileValid = "File is valid!"
 firstArgumentInvalid = "First argument must be the problem id!"
 connectionError = "Connection error!"
@@ -53,8 +53,10 @@ class CLI():
         self.fileType = ''
         # Token of user
         self.token = ''
-        # internal list used to store the values from GET call
+        # Internal list used to store the values from GET call
         self.values = []
+        # Which compiler should be used
+        self.compilerType = ''
 
         # List of outputs to evaluate
         self.outputList = []
@@ -132,20 +134,16 @@ class CLI():
     def evaluate(self, ):
         for input in self.values:
             testCaseId = input['id']
-
+            # Check which compiler to use based on the self.fileType
+            self.setCompilerType()
             try:
-                if self.fileType == "jar":
-                    process = subprocess.Popen(['java', '-jar', self.pathToExecutable], stdin=subprocess.PIPE,
-                                               stdout=subprocess.PIPE).communicate(input['input'])
-                else:
-                    process = subprocess.Popen([self.pathToExecutable], stdin=subprocess.PIPE,
-                                               stdout=subprocess.PIPE).communicate(input['input'])
-
+                process = subprocess.Popen(self.compilerType, stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE, shell=False).communicate(input['input'])
                 output = process[0]
                 data = self.formatOutput(output, testCaseId)
                 self.outputList.append(data)
             except OSError:
-                puts(colored.red("ERROR! : Given file is not an executable!"))
+                puts(colored.red("ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"))
                 sys.exit(1)
 
         output = self.POSTEvaluate()
@@ -204,6 +202,18 @@ class CLI():
             puts()
 
         self.printFinalResult(output, passed, numberOfTests)
+
+    def setCompilerType(self):
+        if self.fileType == "jar":
+            self.compilerType = ['java', '-jar', self.pathToExecutable]
+        elif self.fileType == "py":
+            self.compilerType = ['python', self.pathToExecutable]
+        elif self.fileType == "rb":
+            self.compilerType = ['ruby', self.pathToExecutable]
+        elif self.fileType == "sh":
+            self.compilerType = ['bash', self.pathToExecutable]
+        else:
+            self.compilerType = [self.pathToExecutable]
 
     def writeLog(self, count, testCase):
         # Used for formating
