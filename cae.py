@@ -149,12 +149,12 @@ class CLI():
         output = self.POSTEvaluate()
         # Check if something is wrong
         self.checkJsonStatusCode(output)
-        # Check if tests passed evaluation
+        # Used to check if tests passed evaluation
         passed = 0
         # Used for checking how many tests were really tested (if user put too many)
         numberOfTests = 0
 
-        # Sort the test cases
+        # Dictionary of test cases
         testCaseDict = {}
         # Count used only for output log formatting
         count = 1
@@ -162,19 +162,23 @@ class CLI():
         countSpecificFile = 1
         # Dictionary keys
         i = 1
+        
+        # Write output log
         for testCase in output['testCases']:
             # Add new dictionary value, e.g. "1 : True"
             testCaseDict[i] = testCase['accepted']
             i += 1
-            # Write test status to log file if LOG=True(-more is used)
-            if len(self.testCases) > 0:
-                if self.showInfo and (countSpecificFile in self.testCases):
-                    self.writeLog(countSpecificFile, testCase)
-                countSpecificFile += 1
-            else:
-                if self.showInfo:
-                    self.writeLog(count, testCase)
-                    count += 1
+            # Check if the output for this test case should be visible
+            if not testCase['hiddenOutput']:
+				# Write test status to log file if LOG=True(-more is given as a parameter)
+				if len(self.testCases) > 0: # If there are specific test cases
+					if self.showInfo and (countSpecificFile in self.testCases):
+						self.writeLog(countSpecificFile, testCase)
+					countSpecificFile += 1
+				else: # Write all test cases
+					if self.showInfo:
+						self.writeLog(count, testCase)
+						count += 1
 
         # Something was written to file
         if count > 1 or countSpecificFile > 0:
@@ -192,7 +196,7 @@ class CLI():
                     passed += 1
             puts()
         # Testing only specific test cases
-        else:
+        else:	
             for key in sorted(testCaseDict):
                 if key in self.testCases:
                     numberOfTests += 1
@@ -218,6 +222,7 @@ class CLI():
     def writeLog(self, count, testCase):
         # Used for formating
         separator = "=================================\n\n"
+			
         # Format output for log file
         if testCase['accepted']:
             header = '>>>Test case number ' + str(count) + ": " + "Passed!<<<\nInput:\n"
@@ -230,11 +235,13 @@ class CLI():
         reqOutputText = "Required output:\n"
         reqOutput = testCase['requiredOutput'].rstrip() + "\n\n"
         # Separator
+        
         if self.firstLog:
             logFile = open(self.logFilePath, 'w')
             self.firstLog = False
         else:
             logFile = open(self.logFilePath, 'a')
+        # Combine the formatted output
         fullLog = header + testCaseInput + separator + userOutputText + userOutput + reqOutputText + reqOutput + separator + "\n"
         logFile.write(fullLog)
         logFile.close()
