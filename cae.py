@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 import operator
+import platform
 
 import collections
 import requests
@@ -208,14 +209,21 @@ class CLI():
         self.printFinalResult(output, passed, numberOfTests)
 
     def setCompilerType(self):
-        if self.fileType == "jar":
+        if self.fileType == 'jar':
             self.compilerType = ['java', '-jar', self.pathToExecutable]
-        elif self.fileType == "py":
-            self.compilerType = ['python', self.pathToExecutable]
-        elif self.fileType == "rb":
-            self.compilerType = ['ruby', self.pathToExecutable]
-        elif self.fileType == "sh":
-            self.compilerType = ['bash', self.pathToExecutable]
+            return
+        
+        f = open(self.pathToExecutable, 'r')
+        firstLine = f.readline()
+        f.close()
+
+        if platform.system() == 'Windows' or firstLine[:3] != '#!/':
+            if self.fileType == "py":
+                self.compilerType = ['python', self.pathToExecutable]
+            elif self.fileType == "rb":
+                self.compilerType = ['ruby', self.pathToExecutable]
+            else:
+                self.compilerType = [self.pathToExecutable]
         else:
             self.compilerType = [self.pathToExecutable]
 
