@@ -217,7 +217,7 @@ class CLI():
         firstLine = f.readline()
         f.close()
 
-        if platform.system() == 'Windows' or firstLine[:3] != '#!':
+        if platform.system() == 'Windows' or firstLine[:2] != '#!':
             if self.fileType == "py":
                 self.compilerType = ['python', self.pathToExecutable]
             elif self.fileType == "rb":
