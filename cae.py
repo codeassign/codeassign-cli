@@ -143,7 +143,8 @@ class CLI():
                 data = self.formatOutput(output, testCaseId)
                 self.outputList.append(data)
             except OSError:
-                puts(colored.red("ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"))
+                puts(colored.red(
+                    "ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"))
                 sys.exit(1)
 
         output = self.POSTEvaluate()
@@ -162,7 +163,7 @@ class CLI():
         countSpecificFile = 1
         # Dictionary keys
         i = 1
-        
+
         # Write output log
         for testCase in output['testCases']:
             # Add new dictionary value, e.g. "1 : True"
@@ -170,15 +171,15 @@ class CLI():
             i += 1
             # Check if the output for this test case should be visible
             if not testCase['hiddenOutput']:
-				# Write test status to log file if LOG=True(-more is given as a parameter)
-				if len(self.testCases) > 0: # If there are specific test cases
-					if self.showInfo and (countSpecificFile in self.testCases):
-						self.writeLog(countSpecificFile, testCase)
-					countSpecificFile += 1
-				else: # Write all test cases
-					if self.showInfo:
-						self.writeLog(count, testCase)
-						count += 1
+                # Write test status to log file if LOG=True(-more is given as a parameter)
+                if len(self.testCases) > 0:  # If there are specific test cases
+                    if self.showInfo and (countSpecificFile in self.testCases):
+                        self.writeLog(countSpecificFile, testCase)
+                    countSpecificFile += 1
+                else:  # Write all test cases
+                    if self.showInfo:
+                        self.writeLog(count, testCase)
+                        count += 1
 
         # Something was written to file
         if count > 1 or countSpecificFile > 0:
@@ -196,7 +197,7 @@ class CLI():
                     passed += 1
             puts()
         # Testing only specific test cases
-        else:	
+        else:
             for key in sorted(testCaseDict):
                 if key in self.testCases:
                     numberOfTests += 1
@@ -222,7 +223,7 @@ class CLI():
     def writeLog(self, count, testCase):
         # Used for formating
         separator = "=================================\n\n"
-			
+
         # Format output for log file
         if testCase['accepted']:
             header = '>>>Test case number ' + str(count) + ": " + "Passed!<<<\nInput:\n"
@@ -235,7 +236,7 @@ class CLI():
         reqOutputText = "Required output:\n"
         reqOutput = testCase['requiredOutput'].rstrip() + "\n\n"
         # Separator
-        
+
         if self.firstLog:
             logFile = open(self.logFilePath, 'w')
             self.firstLog = False
@@ -334,6 +335,7 @@ class CLI():
                 tokenFile = open(self.tokenPath, 'r')
             else:
                 tokenFile = open(self.tokenPath, 'w+')
+            # Check if additional info should be shown( -more ) , inside the token file
             for i, line in enumerate(tokenFile):
                 if i == 1:
                     value = line.split("=")[1].rstrip()
