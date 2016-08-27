@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import argparse
 
 import operator
 import platform
@@ -63,16 +64,16 @@ class CLI():
         self.outputList = []
         # Check if user wants more or less info
         self.showInfo = True
-        # Additional options used in argument
-        self.options = False
         # Wrote to log file
         self.logFileBool = False
         # First time log
         self.firstLog = True
 
         # Get all arguments from command line
-        self.args = Args()
-        self.checkIfNoArguments()
+        self.args = self.getArguments()
+
+        # Set the problem id
+        self.problemId = self.args.problemId
 
         # Check given arguments
         self.checkArguments()
@@ -85,9 +86,20 @@ class CLI():
         # Evaluate each test
         self.evaluate()
 
+    # Parse all arguments using argparse
+    def getArguments(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('problemId', help='Id of the problem you want to test.', type=int)
+        parser.add_argument('-c', help='Command to execute on the given file.')
+        parser.add_argument('pathToExecutable', help='Path to the executable, absolute or relative.')
+        parser.add_argument('-test',
+                            help='Id of test cases to run. Formats: \"1,2,3\" \"3-7\" \"2..5\", tests all if left blank. ')
+        parser.add_argument('-log', help='Show less info about testing.', choices=['more', 'less'])
+        args = parser.parse_args()
+        return args
+
     # Check if token is already created. If no token found prompt user for input
     def tokenExists(self):
-
         # Token already exists
         if os.path.exists(self.tokenPath):
             if os.path.isfile(self.tokenPath):
@@ -213,7 +225,7 @@ class CLI():
         if self.fileType == 'jar':
             self.compilerType = ['java', '-jar', self.pathToExecutable]
             return
-        
+
         f = open(self.pathToExecutable, 'r')
         firstLine = f.readline()
         f.close()
@@ -331,13 +343,11 @@ class CLI():
 
     def checkArguments(self):
         # Check for additional options and modify internal values accordingly
-        if "-" in self.args[len(self.args) - 1]:
-            if self.args[-1] == "-less":
+        if self.args.log:
+            if self.args.log == "less":
                 self.modifyLog("\nLOG=False", False)
-                self.options = True
-            if self.args[-1] == "-more":
+            if self.args.log == "more":
                 self.modifyLog("\nLOG=True", True)
-                self.options = True
         else:
             if os.path.exists(self.tokenPath) and os.path.isfile(self.tokenPath):
                 tokenFile = open(self.tokenPath, 'r')
@@ -354,21 +364,9 @@ class CLI():
                     else:
                         pass
 
-        # Check if first argument(problemId) is a valid number
-        try:
-            self.problemId = int(self.args[0])
-        except ValueError:
-            #  Help command entered
-            if self.args[0] == "help":
-                puts(colored.yellow(commandExample))
-            # Invalid input
-            else:
-                puts(colored.red(firstArgumentInvalid))
-            sys.exit(1)
-
         # Check if second argument(executable) is a valid file
-        if self.args[1]:
-            pathToFile = self.getFullPath(self.args[1])
+        if self.args.pathToExecutable:
+            pathToFile = self.getFullPath(self.args.pathToExecutable)
             self.getFileType(pathToFile)
             if pathToFile:
                 if os.path.exists(pathToFile):
@@ -395,9 +393,9 @@ class CLI():
             sys.exit(1)
 
         # Check if third argument(specific test case numbers) exists
-        if self.args[2] and ((len(self.args) >= 4) or not self.options):
+        if self.args.test:
             try:
-                toParse = str(self.args[2])
+                toParse = str(self.args.test)
                 # Remove last char if not int
                 toParse = self.chechLastChar(toParse)
 
@@ -434,8 +432,8 @@ class CLI():
                     self.testCases = map(int, splited)
 
                 # Only one test case
-                elif self.isInt(self.args[2]):
-                    self.testCases.append(int(self.args[2]))
+                elif self.isInt(self.args.test):
+                    self.testCases.append(int(self.args.test))
 
                 # None of the types given, error
                 else:
@@ -544,12 +542,6 @@ class CLI():
             fileName = pathToFile.split("\\")[-1]
         type = fileName.split(".")[-1]
         self.fileType = type
-
-    # No arguments given
-    def checkIfNoArguments(self):
-        if len(self.args) == 0:
-            puts(colored.red("No arguments given! Use \"cae help\" for instructions."))
-            sys.exit(1)
 
 
 cli = CLI()
