@@ -33,13 +33,13 @@ class CLI():
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
         # GET problem path
-        self.pathGetProblem = 'http://api.codeassign.com/Problem/'
+        self.pathGetProblem = 'https://api.codeassign.com/Problem/'
         # GET TestCase values
-        self.pathGetTestValues = 'http://api.codeassign.com/TestCase/'
+        self.pathGetTestValues = 'https://api.codeassign.com/TestCase/'
         # POST evaluate TestCase (output)
-        self.pathSetPostEvaluate = 'http://api.codeassign.com/Evaluate/'
+        self.pathSetPostEvaluate = 'https://api.codeassign.com/Evaluate/'
         # POST AssociateConsoleToken
-        self.pathAssociateToken = 'http://api.codeassign.com/AssociateConsoleToken/'
+        self.pathAssociateToken = 'https://api.codeassign.com/AssociateConsoleToken/'
 
         # Path to .codeassign file
         self.tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")

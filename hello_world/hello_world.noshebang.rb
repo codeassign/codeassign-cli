@@ -1,2 +1,2 @@
 name = gets.strip
-puts "Hello, " + name + "!"
+puts "hello, " + name
