@@ -125,7 +125,7 @@ class CLI:
         self.load_arguments(args, properties)
 
         # Get test cases for given problem id
-        inputs = self.getInputValues()
+        inputs = self.get_inputs(self.problemId)
 
         token = self.load_token(properties)
 
@@ -256,7 +256,7 @@ class CLI:
                 countSpecificOutput += 1
             puts()
 
-        self.printFinalResult(output, passed, numberOfTests)
+        self.printFinalResult(problem_id, output, passed, numberOfTests)
 
     def setCompilerType(self):
         if self.fileType == 'jar':
@@ -313,15 +313,15 @@ class CLI:
         data['output'] = output
         return data
 
-    def printFinalResult(self, output, passed, numberOfTests):
+    def printFinalResult(self, problem_id, output, passed, numberOfTests):
         # Given test cases dont exist
         if numberOfTests == 0 and len(self.testCases) > 0:
             puts(colored.red("Given test cases " + str(self.testCases) + " don't exist for problem with id " + str(
-                self.problemId) + "!"))
+                problem_id) + "!"))
             sys.exit(1)
         # No tests found
         elif numberOfTests == 0:
-            puts(colored.red("No test cases found for problem with id " + str(self.problemId) + "!"))
+            puts(colored.red("No test cases found for problem with id " + str(problem_id) + "!"))
             sys.exit(1)
 
         # Log was created and LOG=True(-more is used)
@@ -357,9 +357,9 @@ class CLI:
             return False
 
     # Get test cases for the given problemId
-    def getInputValues(self):
+    def get_inputs(self, problem_id):
         try:
-            response = requests.get(CLI.Endpoints.get_test_case_endpoint(self.problemId))
+            response = requests.get(CLI.Endpoints.get_test_case_endpoint(problem_id))
             # Wrong problem id
             if not response.status_code == requests.codes.ok:
                 puts(colored.red(CLI.Strings.INVALID_PROBLEM_ID))
@@ -369,8 +369,7 @@ class CLI:
                 if self.showInfo:
                     puts(colored.green(CLI.Strings.PROBLEM_ID_OK))
             response.encoding = "utf8"
-            data = response.json()
-            return data
+            return response.json()
 
         except requests.ConnectionError:
             puts(colored.red(CLI.Strings.CONNECTION_ERROR))
