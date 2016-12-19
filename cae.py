@@ -495,11 +495,13 @@ class CLI:
         except ValueError:
             self.invalidTestCaseRange()
 
-    def invalidTestCaseRange(self):
+    @staticmethod
+    def invalidTestCaseRange():
         puts(colored.red("Invalid Test Case number format!"))
         sys.exit(1)
 
-    def checkRange(self, split):
+    @staticmethod
+    def checkRange(split):
         try:
             int(split[0])
             int(split[1])
@@ -510,7 +512,8 @@ class CLI:
     def setTestCases(self, split):
         self.testCases = range(int(split[0]), int(split[1]) + 1)
 
-    def getFullPath(self, path):
+    @staticmethod
+    def getFullPath(path):
         # fix given path
         if path[0] == "/" or path[0] == "\\":
             path = path[1:]
@@ -521,7 +524,8 @@ class CLI:
             return os.path.abspath(path)
 
 
-    def modifyEncoding(self, data):
+    @staticmethod
+    def modifyEncoding(data):
         data['name'] = data['name'].encode('utf8')
         data['email'] = data['email'].encode('utf8')
 
