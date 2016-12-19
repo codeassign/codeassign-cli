@@ -27,6 +27,7 @@ encodingUTF8 = 'utf_8'
 class CLI:
 
     class Strings:
+        NO_ARGUMENTS_GIVEN = "No arguments given! Use \"cae help\" for instructions."
         NO_TOKEN_FOUND = "In order to know we're going to need your token. You can get one at https://codeassign.com/tokens"
         INPUT_TOKEN = "Please input your token: "
 
@@ -113,7 +114,7 @@ class CLI:
 
         # Get all arguments from command line
         self.args = Args()
-        self.checkIfNoArguments()
+        self.exit_if_no_arguments(self.args)
 
         # Check given arguments
         self.checkArguments()
@@ -557,10 +558,9 @@ class CLI:
         type = fileName.split(".")[-1]
         self.fileType = type
 
-    # No arguments given
-    def checkIfNoArguments(self):
-        if len(self.args) == 0:
-            puts(colored.red("No arguments given! Use \"cae help\" for instructions."))
+    def exit_if_no_arguments(self, args):
+        if len(args) == 0:
+            puts(colored.red(CLI.Strings.NO_ARGUMENTS_GIVEN))
             sys.exit(1)
 
 
