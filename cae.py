@@ -209,15 +209,16 @@ class CLI():
             i += 1
             # Check if the output for this test case should be visible
             if not testCase['hiddenOutput']:
-				# Write test status to log file if LOG=True(-more is given as a parameter)
-				if len(self.testCases) > 0: # If there are specific test cases
-					if self.showInfo and (countSpecificFile in self.testCases):
-						self.writeLog(countSpecificFile, testCase)
-					countSpecificFile += 1
-				else: # Write all test cases
-					if self.showInfo:
-						self.writeLog(count, testCase)
-						count += 1
+                # Write test status to log file if LOG=True(-more is given as a parameter)
+                # If there are specific test cases
+                if len(self.testCases) > 0:
+                    if self.showInfo and (countSpecificFile in self.testCases):
+                        self.writeLog(countSpecificFile, testCase)
+                    countSpecificFile += 1
+                else: # Write all test cases
+                    if self.showInfo:
+                        self.writeLog(count, testCase)
+                        count += 1
 
         # Something was written to file
         if count > 1 or countSpecificFile > 0:
