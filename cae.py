@@ -33,6 +33,7 @@ class CLI:
 
     class Endpoints(object):
         POST_EVALUATE = "https://api.codeassign.com/Evaluate/"
+        POST_ASSOCIATE_TOKEN = "https://api.codeassign.com/AssociateConsoleToken/"
         GET_TEST_CASES = "https://api.codeassign.com/TestCase/"
 
         @staticmethod
@@ -42,6 +43,10 @@ class CLI:
         @staticmethod
         def get_evaluation_endpoint(problem_id, token):
             return CLI.Endpoints.POST_EVALUATE + str(problem_id) + "?token=" + token
+
+        @staticmethod
+        def get_associate_token_endpoint(token):
+            return CLI.Endpoints.POST_ASSOCIATE_TOKEN + token
 
     class Properties:
         KEY_TOKEN = "APP_TOKEN"
@@ -83,8 +88,6 @@ class CLI:
 
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
-        # POST AssociateConsoleToken
-        self.pathAssociateToken = 'https://api.codeassign.com/AssociateConsoleToken/'
 
         # Path to .codeassign file
         self.tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
@@ -149,7 +152,7 @@ class CLI:
         return raw_input().rstrip()
 
     def validate_token(self, token):
-        response = requests.post(self.pathAssociateToken + token)
+        response = requests.post(CLI.Endpoints.get_associate_token_endpoint(token))
         # Check if status not 200
         if response.status_code != requests.codes.ok:
             puts(colored.red("Bad request!2"))
