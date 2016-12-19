@@ -11,15 +11,6 @@ import csv
 from clint.arguments import Args
 from clint.textui import puts, colored
 
-commandExample = "Command example: \"cae 576 /test/main.exe 1,2,3\"\nLast argument is optional and can be in formats: \"1,2,3\" \"3-7\" \"2..5\", tests all if left blank."
-noPathGiven = "No path given. Please enter path to the testing file!"
-noPathExists = "Given path does not exist!"
-notAFile = "Given path is not a file or an executable!"
-fileValid = "File is valid!"
-firstArgumentInvalid = "First argument must be the problem id!"
-connectionError = "Connection error!"
-invalidProblemId = "Invalid problem Id! (Error 404)"
-problemIdOk = "Problem id OK!"
 encodingISO = 'ISO-8859-1'
 encodingUTF8 = 'utf_8'
 
@@ -27,9 +18,22 @@ encodingUTF8 = 'utf_8'
 class CLI:
 
     class Strings:
+        INPUT_EXECUTABLE_PATH = "Please enter path to the executable!"
+        NOT_EXECUTABLE = "ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"
+        INVALID_TOKEN = "Invalid token!"
+        BAD_REQUEST = "Bad request!"
         NO_ARGUMENTS_GIVEN = "No arguments given! Use \"cae help\" for instructions."
         NO_TOKEN_FOUND = "In order to know we're going to need your token. You can get one at https://codeassign.com/tokens"
+        NO_PATH_GIVEN = "No path given. Please enter path to the testing file!"
+        PATH_DOES_NOT_EXIST = "Given path does not exist!"
         INPUT_TOKEN = "Please input your token: "
+        NOT_A_FILE = "Given path is not a file or an executable!"
+        FILE_IS_VALID = "File is valid!"
+        INVALID_PROBLEM_ID = "Invalid problem Id! (Error 404)"
+        FIRST_ARGUMENT_INVALID = "First argument must be the problem id!"
+        CONNECTION_ERROR = "Connection error!"
+        COMMAND_EXAMPLE = "Command example: \"cae 576 /test/main.exe 1,2,3\"\nLast argument is optional and can be in formats: \"1,2,3\" \"3-7\" \"2..5\", tests all if left blank."
+        PROBLEM_ID_OK = "Problem id OK!"
 
     class Endpoints(object):
         POST_EVALUATE = "https://api.codeassign.com/Evaluate/"
@@ -149,13 +153,13 @@ class CLI:
         response = requests.post(CLI.Endpoints.get_associate_token_endpoint(token))
         # Check if status not 200
         if response.status_code != requests.codes.ok:
-            puts(colored.red("Bad request!2"))
+            puts(colored.red(CLI.Strings.BAD_REQUEST))
             return False
 
         data = response.json()
         # Check if wrong token
         if 'errorMessage' in data.keys():
-            puts(colored.red("Invalid token!"))
+            puts(colored.red(CLI.Strings.INVALID_TOKEN))
             return False
 
         # Modify encoding of account info
@@ -189,7 +193,7 @@ class CLI:
                 data = self.formatOutput(output, testCaseId)
                 self.outputList.append(data)
             except OSError:
-                puts(colored.red("ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"))
+                puts(colored.red(CLI.Strings.NOT_EXECUTABLE))
                 sys.exit(1)
 
         output = self.POSTEvaluate(problem_id, token)
@@ -358,18 +362,18 @@ class CLI:
             response = requests.get(CLI.Endpoints.get_test_case_endpoint(self.problemId))
             # Wrong problem id
             if not response.status_code == requests.codes.ok:
-                puts(colored.red(invalidProblemId))
+                puts(colored.red(CLI.Strings.INVALID_PROBLEM_ID))
                 sys.exit(1)
             else:
                 # Show if user wants more info (LOG=True)
                 if self.showInfo:
-                    puts(colored.green(problemIdOk))
+                    puts(colored.green(CLI.Strings.PROBLEM_ID_OK))
             response.encoding = "utf8"
             data = response.json()
             return data
 
         except requests.ConnectionError:
-            puts(colored.red(connectionError))
+            puts(colored.red(CLI.Strings.CONNECTION_ERROR))
             sys.exit(1)
 
     def load_arguments(self, args, properties):
@@ -392,10 +396,10 @@ class CLI:
         except ValueError:
             #  Help command entered
             if args[0] == "help":
-                puts(colored.yellow(commandExample))
+                puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
             # Invalid input
             else:
-                puts(colored.red(firstArgumentInvalid))
+                puts(colored.red(CLI.Strings.FIRST_ARGUMENT_INVALID))
             sys.exit(1)
 
         # Check if second argument(executable) is a valid file
@@ -407,23 +411,23 @@ class CLI:
                     if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
                         # Show if user wants more info (LOG=True)
                         if self.showInfo:
-                            puts(colored.green(fileValid))
+                            puts(colored.green(CLI.Strings.FILE_IS_VALID))
                         self.pathToExecutable = pathToFile
                     else:
-                        puts(colored.red(notAFile))
-                        puts(colored.yellow(commandExample))
+                        puts(colored.red(CLI.Strings.NOT_A_FILE))
+                        puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
                         sys.exit(1)
                 else:
-                    puts(colored.red(noPathExists))
-                    puts(colored.yellow(commandExample))
+                    puts(colored.red(CLI.Strings.PATH_DOES_NOT_EXIST))
+                    puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
                     sys.exit(1)
             else:
-                puts(colored.red(noPathGiven))
-                puts(colored.yellow(commandExample))
+                puts(colored.red(CLI.Strings.NO_PATH_GIVEN))
+                puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
                 sys.exit(1)
         else:
-            puts(colored.red("Please enter path to the executable!"))
-            puts(colored.yellow(commandExample))
+            puts(colored.red(CLI.Strings.INPUT_EXECUTABLE_PATH))
+            puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
             sys.exit(1)
 
         # Check if third argument(specific test case numbers) exists
