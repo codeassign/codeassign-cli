@@ -4,10 +4,8 @@ import os
 import subprocess
 import sys
 
-import operator
 import platform
 
-import collections
 import requests
 import csv
 from clint.arguments import Args
@@ -26,7 +24,7 @@ encodingISO = 'ISO-8859-1'
 encodingUTF8 = 'utf_8'
 
 
-class CLI():
+class CLI:
 
     class Strings:
         NO_TOKEN_FOUND = "In order to know we're going to need your token. You can get one at https://codeassign.com/tokens"
@@ -76,8 +74,6 @@ class CLI():
 
 
     def __init__(self):
-
-        # sys.path.insert(0, os.path.abspath('..'))
 
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
@@ -281,7 +277,7 @@ class CLI():
     def writeLog(self, count, testCase):
         # Used for formating
         separator = "=================================\n\n"
-			
+
         # Format output for log file
         if testCase['accepted']:
             header = '>>>Test case number ' + str(count) + ": " + "Passed!<<<\nInput:\n"
