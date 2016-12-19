@@ -32,6 +32,13 @@ class CLI():
         NO_TOKEN_FOUND = "In order to know we're going to need your token. You can get one at https://codeassign.com/tokens"
         INPUT_TOKEN = "Please input your token: "
 
+    class Endpoints(object):
+        POST_EVALUATE = "https://api.codeassign.com/Evaluate/"
+
+        @classmethod
+        def get_evaluation_endpoint(cls, problem_id, token):
+            return cls.POST_EVALUATE + str(problem_id) + "?token=" + token
+
     class Properties:
         KEY_TOKEN = "APP_TOKEN"
         KEY_LOG = "LOG"
@@ -78,8 +85,6 @@ class CLI():
         self.pathGetProblem = 'https://api.codeassign.com/Problem/'
         # GET TestCase values
         self.pathGetTestValues = 'https://api.codeassign.com/TestCase/'
-        # POST evaluate TestCase (output)
-        self.pathSetPostEvaluate = 'https://api.codeassign.com/Evaluate/'
         # POST AssociateConsoleToken
         self.pathAssociateToken = 'https://api.codeassign.com/AssociateConsoleToken/'
 
@@ -94,8 +99,6 @@ class CLI():
         self.pathToExecutable = ''
         # File's extension
         self.fileType = ''
-        # Token of user
-        self.token = ''
         # Internal list used to store the values from GET call
         self.values = []
         # Which compiler should be used
@@ -127,11 +130,8 @@ class CLI():
 
         token = self.load_token(properties)
 
-        # TODO remove global variable
-        self.token = token
-
         # Evaluate each test
-        self.evaluate()
+        self.evaluate(self.problemId, token)
 
     def load_token(self, properties):
         if not properties.is_token_present():
@@ -182,7 +182,7 @@ class CLI():
             return True
 
     # Test the code with input
-    def evaluate(self, ):
+    def evaluate(self, problem_id, token):
         for input in self.values:
             testCaseId = input['id']
             # Check which compiler to use based on the self.fileType
@@ -197,7 +197,7 @@ class CLI():
                 puts(colored.red("ERROR! : Given file is not an executable! (Did you add the path of your compiler to PATH?)"))
                 sys.exit(1)
 
-        output = self.POSTEvaluate()
+        output = self.POSTEvaluate(problem_id, token)
         # Check if something is wrong
         self.checkJsonStatusCode(output)
         # Used to check if tests passed evaluation
@@ -305,10 +305,8 @@ class CLI():
         logFile.write(fullLog)
         logFile.close()
 
-    def POSTEvaluate(self):
-        response = requests.post(self.pathSetPostEvaluate + str(self.problemId) + str(self.token), json=self.outputList)
-        output = response.json()
-        return output
+    def POSTEvaluate(self, problem_id, token):
+        return requests.post(CLI.Endpoints.get_evaluation_endpoint(problem_id, token), json=self.outputList).json()
 
     def formatOutput(self, output, testCaseId):
         data = {}
