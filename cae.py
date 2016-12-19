@@ -33,10 +33,15 @@ class CLI:
 
     class Endpoints(object):
         POST_EVALUATE = "https://api.codeassign.com/Evaluate/"
+        GET_TEST_CASES = "https://api.codeassign.com/TestCase/"
 
-        @classmethod
-        def get_evaluation_endpoint(cls, problem_id, token):
-            return cls.POST_EVALUATE + str(problem_id) + "?token=" + token
+        @staticmethod
+        def get_test_case_endpoint(problem_id):
+            return CLI.Endpoints.GET_TEST_CASES + str(problem_id)
+
+        @staticmethod
+        def get_evaluation_endpoint(problem_id, token):
+            return CLI.Endpoints.POST_EVALUATE + str(problem_id) + "?token=" + token
 
     class Properties:
         KEY_TOKEN = "APP_TOKEN"
@@ -78,8 +83,6 @@ class CLI:
 
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
-        # GET TestCase values
-        self.pathGetTestValues = 'https://api.codeassign.com/TestCase/'
         # POST AssociateConsoleToken
         self.pathAssociateToken = 'https://api.codeassign.com/AssociateConsoleToken/'
 
@@ -355,7 +358,7 @@ class CLI:
     # Get test cases for the given problemId
     def getInputValues(self):
         try:
-            response = requests.get(self.pathGetTestValues + str(self.problemId))
+            response = requests.get(CLI.Endpoints.get_test_case_endpoint(self.problemId))
             # Wrong problem id
             if not response.status_code == requests.codes.ok:
                 puts(colored.red(invalidProblemId))
