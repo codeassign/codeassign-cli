@@ -39,7 +39,7 @@ class CLI():
 
         def __init__(self, properties_file_path=propertiesFilePath):
             self.propertiesFilePath = properties_file_path
-            self.properties = dict([(row[0], row[1]) for row in csv.reader(open('the_file', 'r'), delimiter='=')])
+            self.properties = dict([(row[0], row[1]) for row in csv.reader(open(properties_file_path, 'r'), delimiter='=')])
 
         def get_token(self):
             return self.properties.get(self.KEY_TOKEN, None)
