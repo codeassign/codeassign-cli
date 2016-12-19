@@ -114,15 +114,11 @@ class CLI:
         # First time log
         self.firstLog = True
 
-        # Load config file properties
         properties = CLI.Properties()
 
-        # Get all arguments from command line
-        self.args = Args()
-        self.exit_if_no_arguments(self.args)
-
-        # Check given arguments
-        self.checkArguments(properties)
+        args = Args()
+        CLI.exit_if_no_arguments(args)
+        self.load_arguments(args, properties)
 
         # Get test cases for given problem id
         self.values = self.getInputValues()
@@ -376,14 +372,14 @@ class CLI:
             puts(colored.red(connectionError))
             sys.exit(1)
 
-    def checkArguments(self, properties):
+    def load_arguments(self, args, properties):
         # Check for additional options and modify internal values accordingly
-        if "-" in self.args[len(self.args) - 1]:
-            if self.args[-1] == "-less":
+        if "-" in args[len(args) - 1]:
+            if args[-1] == "-less":
                 properties.set_log(False)
                 properties.save()
                 self.options = True
-            if self.args[-1] == "-more":
+            if args[-1] == "-more":
                 properties.set_log(True)
                 properties.save()
                 self.options = True
@@ -392,10 +388,10 @@ class CLI:
 
         # Check if first argument(problemId) is a valid number
         try:
-            self.problemId = int(self.args[0])
+            self.problemId = int(args[0])
         except ValueError:
             #  Help command entered
-            if self.args[0] == "help":
+            if args[0] == "help":
                 puts(colored.yellow(commandExample))
             # Invalid input
             else:
@@ -403,8 +399,8 @@ class CLI:
             sys.exit(1)
 
         # Check if second argument(executable) is a valid file
-        if self.args[1]:
-            pathToFile = self.getFullPath(self.args[1])
+        if args[1]:
+            pathToFile = self.getFullPath(args[1])
             self.getFileType(pathToFile)
             if pathToFile:
                 if os.path.exists(pathToFile):
@@ -431,9 +427,9 @@ class CLI:
             sys.exit(1)
 
         # Check if third argument(specific test case numbers) exists
-        if self.args[2] and ((len(self.args) >= 4) or not self.options):
+        if args[2] and ((len(args) >= 4) or not self.options):
             try:
-                toParse = str(self.args[2])
+                toParse = str(args[2])
                 # Remove last char if not int
                 toParse = self.chechLastChar(toParse)
 
@@ -470,8 +466,8 @@ class CLI:
                     self.testCases = map(int, splited)
 
                 # Only one test case
-                elif self.isInt(self.args[2]):
-                    self.testCases.append(int(self.args[2]))
+                elif self.isInt(args[2]):
+                    self.testCases.append(int(args[2]))
 
                 # None of the types given, error
                 else:
