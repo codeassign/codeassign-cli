@@ -125,12 +125,12 @@ class CLI:
         self.load_arguments(args, properties)
 
         # Get test cases for given problem id
-        self.values = self.getInputValues()
+        inputs = self.getInputValues()
 
         token = self.load_token(properties)
 
         # Evaluate each test
-        self.evaluate(self.problemId, token)
+        self.evaluate(inputs, self.problemId, token)
 
     def load_token(self, properties):
         if not properties.is_token_present():
@@ -181,8 +181,8 @@ class CLI:
             return True
 
     # Test the code with input
-    def evaluate(self, problem_id, token):
-        for input in self.values:
+    def evaluate(self, inputs, problem_id, token):
+        for input in inputs:
             testCaseId = input['id']
             # Check which compiler to use based on the self.fileType
             self.setCompilerType()
