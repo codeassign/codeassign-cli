@@ -405,7 +405,7 @@ class CLI:
         # Check if second argument(executable) is a valid file
         if args[1]:
             pathToFile = self.getFullPath(args[1])
-            self.getFileType(pathToFile)
+            self.fileType = self.getFileType(pathToFile)
             if pathToFile:
                 if os.path.exists(pathToFile):
                     if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
@@ -530,14 +530,15 @@ class CLI:
         data['email'] = data['email'].encode('utf8')
 
     # Get the extension of the users file (executable)
-    def getFileType(self, pathToFile):
+    @staticmethod
+    def getFileType(pathToFile):
         fileName = ''
         if "/" in pathToFile:
             fileName = pathToFile.split("/")[-1]
         elif "\\" in pathToFile:
             fileName = pathToFile.split("\\")[-1]
         type = fileName.split(".")[-1]
-        self.fileType = type
+        return type
 
     @staticmethod
     def exit_if_no_arguments(args):
