@@ -28,6 +28,10 @@ encodingUTF8 = 'utf_8'
 
 class CLI():
 
+    class Strings:
+        NO_TOKEN_FOUND = "In order to know we're going to need your token. You can get one at https://codeassign.com/tokens"
+        INPUT_TOKEN = "Please input your token: "
+
     class Properties:
         KEY_TOKEN = "APP_TOKEN"
         KEY_LOG = "LOG"
@@ -118,56 +122,64 @@ class CLI():
         # Get test cases for given problem id
         self.values = self.getInputValues()
 
-        # Check token
-        self.tokenExists()
+        # Load config file properties
+        properties = CLI.Properties()
+
+        token = self.load_token(properties)
+
+        # TODO remove global variable
+        self.token = token
+
         # Evaluate each test
         self.evaluate()
 
-    # Check if token is already created. If no token found prompt user for input
-    def tokenExists(self):
+    def load_token(self, properties):
+        if not properties.is_token_present():
+            puts(colored.yellow(CLI.Strings.NO_TOKEN_FOUND))
 
-        # Token already exists
-        if os.path.exists(self.tokenPath):
-            if os.path.isfile(self.tokenPath):
-                tokenFile = open(self.tokenPath, 'r')
-                line = tokenFile.readline()
-                # Check if file is properly formatted
-                if not line.rstrip():
-                    puts(colored.yellow('No token file detected. Please enter your token: '))
-                    self.promptNewToken()
-                elif len(line.split("=")) != 2:
-                    puts(colored.red("No valid token found!" + self.tokenPath))
-                    puts(colored.yellow("Please enter token: "))
-                    self.promptNewToken()
-                else:
-                    token = line.split("=")[1].rstrip()
-                    self.checkToken(token)
-                    # Not sure if needed for pretty output
-                    # puts(colored.yellow("Found existing token in: \"" + self.tokenPath + "\""))
-                    self.token = "?token=" + token
-                    tokenFile.close()
-        # Create new token in ~/.codeassign
+            while True:
+                token = self.request_token()
+                if self.validate_token(token):
+                    properties.set_token(token)
+                    properties.save()
+                    return token
         else:
-            puts(colored.yellow('No token file detected. Please enter your token: '))
-            self.promptNewToken()
+            return properties.get_token()
 
-    def promptNewToken(self):
-        tokenInput = raw_input().rstrip()
-        self.checkToken(tokenInput)
-        self.token = "?token=" + tokenInput
-        self.createToken(tokenInput)
+    def request_token(self):
+        sys.stdout.write(CLI.Strings.INPUT_TOKEN)
+        return raw_input().rstrip()
 
-    def createToken(self, tokenInput):
-        tokenFile = open(self.tokenPath, 'w')
-        stringToWrite = "APP_TOKEN=" + tokenInput
-        tokenFile.write(stringToWrite)
-        tokenFile.close()
-        if self.showInfo:
-            self.modifyLog("\nLOG=True", self.showInfo)
-        else:
-            self.modifyLog("\nLOG=False", self.showInfo)
-        puts(colored.green("Token saved to: \"" + self.tokenPath + "\"\n"))
-        tokenFile.close()
+    def validate_token(self, token):
+        response = requests.post(self.pathAssociateToken + token)
+        # Check if status not 200
+        if response.status_code != requests.codes.ok:
+            puts(colored.red("Bad request!2"))
+            return False
+
+        data = response.json()
+        # Check if wrong token
+        if 'errorMessage' in data.keys():
+            puts(colored.red("Invalid token!"))
+            return False
+
+        # Modify encoding of account info
+        self.modifyEncoding(data)
+
+        # Token is ok
+        if data['success'] and self.showInfo:
+            puts(colored.green("Token is valid!\n"))
+            formatNum = len(data['email'].decode('utf8')) + 8
+            puts(" " * (formatNum / 3) + colored.yellow("Account info"))
+            nameLen = len(data['name'].decode('utf8')) + 8
+            puts("|" + "=" * formatNum + "|")
+
+            puts("| " + colored.yellow("Name: ") + " " + data['name'] + " " * (
+                formatNum - nameLen) + "|\n| " + colored.yellow(
+                "Email: ") + data['email'] + "|")
+            puts("|" + "=" * formatNum + "|")
+            puts()
+            return True
 
     # Test the code with input
     def evaluate(self, ):
@@ -536,37 +548,6 @@ class CLI():
         else:
             return os.path.abspath(path)
 
-    def checkToken(self, tokenInput):
-        response = requests.post(self.pathAssociateToken + tokenInput)
-        # Check if status not 200
-        if response.status_code != requests.codes.ok:
-            puts(colored.red("Bad request!2"))
-            sys.exit(1)
-
-        data = response.json()
-        # Check if wrong token
-        if 'errorMessage' in data.keys():
-            puts(colored.red("Invalid token!"))
-            sys.exit(1)
-
-        # Modify encoding of account info
-        self.modifyEncoding(data)
-
-        # Token is ok
-        if data['success'] and self.showInfo:
-            puts(colored.green("Token is valid!\n"))
-            formatNum = len(data['email'].decode('utf8')) + 8
-            puts(" " * (formatNum / 3) + colored.yellow("Account info"))
-            nameLen = len(data['name'].decode('utf8')) + 8
-            puts("|" + "=" * formatNum + "|")
-            # puts(colored.yellow("\tAccount info"))
-
-            puts("| " + colored.yellow("Name: ") + " " + data['name'] + " " * (
-                formatNum - nameLen) + "|\n| " + colored.yellow(
-                "Email: ") + data['email'] + "|")
-            puts("|" + "=" * formatNum + "|")
-            puts()
-            return True
 
     def modifyEncoding(self, data):
         data['name'] = data['name'].encode('utf8')
