@@ -78,8 +78,6 @@ class CLI:
 
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
-        # GET problem path
-        self.pathGetProblem = 'https://api.codeassign.com/Problem/'
         # GET TestCase values
         self.pathGetTestValues = 'https://api.codeassign.com/TestCase/'
         # POST AssociateConsoleToken
