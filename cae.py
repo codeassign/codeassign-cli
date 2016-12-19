@@ -58,7 +58,7 @@ class CLI:
 
         DEFAULT_PROPERTIES_FILE = ".codeassign"
 
-        propertiesFilePath = os.path.join(os.path.expanduser("~"), ".codeassign")
+        propertiesFilePath = os.path.join(os.path.expanduser("~"), DEFAULT_PROPERTIES_FILE)
         properties = dict()
 
         def __init__(self, properties_file_path=propertiesFilePath):
