@@ -145,7 +145,8 @@ class CLI:
         else:
             return properties.get_token()
 
-    def request_token(self):
+    @staticmethod
+    def request_token():
         sys.stdout.write(CLI.Strings.INPUT_TOKEN)
         return raw_input().rstrip()
 
