@@ -9,6 +9,7 @@ import platform
 
 import collections
 import requests
+import csv
 from clint.arguments import Args
 from clint.textui import puts, colored
 
@@ -26,6 +27,43 @@ encodingUTF8 = 'utf_8'
 
 
 class CLI():
+
+    class Properties:
+        KEY_TOKEN = "APP_TOKEN"
+        KEY_LOG = "LOG"
+
+        DEFAULT_PROPERTIES_FILE = ".codeassign"
+
+        propertiesFilePath = os.path.join(os.path.expanduser("~"), ".codeassign")
+        properties = dict()
+
+        def __init__(self, properties_file_path=propertiesFilePath):
+            self.propertiesFilePath = properties_file_path
+            self.properties = dict([(row[0], row[1]) for row in csv.reader(open('the_file', 'r'), delimiter='=')])
+
+        def get_token(self):
+            return self.properties.get(self.KEY_TOKEN, None)
+
+        def set_token(self, token):
+            self.properties[self.KEY_TOKEN] = token
+
+        def get_log(self):
+            return self.properties.get(self.KEY_LOG, 'False') == 'True'
+
+        def set_log(self, log):
+            self.properties[self.KEY_LOG] = log
+
+        def is_token_present(self):
+            return self.get_token() is not None
+
+        def to_output(self):
+            return "\n".join([k + '=' + v for k, v in self.properties.iteritems()])
+
+        def save(self, output_file=propertiesFilePath):
+            with open(output_file, 'w') as output:
+                output.write(self.to_output())
+
+
     def __init__(self):
 
         # sys.path.insert(0, os.path.abspath('..'))
