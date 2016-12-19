@@ -168,29 +168,29 @@ class CLI:
         # Token is ok
         if data['success'] and self.showInfo:
             puts(colored.green("Token is valid!\n"))
-            formatNum = len(data['email'].decode('utf8')) + 8
-            puts(" " * (formatNum / 3) + colored.yellow("Account info"))
-            nameLen = len(data['name'].decode('utf8')) + 8
-            puts("|" + "=" * formatNum + "|")
+            format_num = len(data['email'].decode('utf8')) + 8
+            puts(" " * (format_num / 3) + colored.yellow("Account info"))
+            name_length = len(data['name'].decode('utf8')) + 8
+            puts("|" + "=" * format_num + "|")
 
             puts("| " + colored.yellow("Name: ") + " " + data['name'] + " " * (
-                formatNum - nameLen) + "|\n| " + colored.yellow(
+                format_num - name_length) + "|\n| " + colored.yellow(
                 "Email: ") + data['email'] + "|")
-            puts("|" + "=" * formatNum + "|")
+            puts("|" + "=" * format_num + "|")
             puts()
             return True
 
     # Test the code with input
     def evaluate(self, inputs, problem_id, token):
-        for input in inputs:
-            testCaseId = input['id']
+        for test_case in inputs:
+            test_case_id = test_case['id']
             # Check which compiler to use based on the self.fileType
             self.setCompilerType()
             try:
                 process = subprocess.Popen(self.compilerType, stdin=subprocess.PIPE,
-                                           stdout=subprocess.PIPE, shell=False).communicate(input['input'])
+                                           stdout=subprocess.PIPE, shell=False).communicate(test_case['input'])
                 output = process[0]
-                data = self.formatOutput(output, testCaseId)
+                data = self.formatOutput(output, test_case_id)
                 self.outputList.append(data)
             except OSError:
                 puts(colored.red(CLI.Strings.NOT_EXECUTABLE))
@@ -202,61 +202,61 @@ class CLI:
         # Used to check if tests passed evaluation
         passed = 0
         # Used for checking how many tests were really tested (if user put too many)
-        numberOfTests = 0
+        number_of_tests = 0
 
         # Dictionary of test cases
-        testCaseDict = {}
+        test_case_dict = {}
         # Count used only for output log formatting
         count = 1
         # Another count ( yeah ) , for the right output number when there are only specific test cases, used for log
-        countSpecificFile = 1
+        count_specific_file = 1
         # Dictionary keys
         i = 1
         
         # Write output log
         for testCase in output['testCases']:
             # Add new dictionary value, e.g. "1 : True"
-            testCaseDict[i] = testCase['accepted']
+            test_case_dict[i] = testCase['accepted']
             i += 1
             # Check if the output for this test case should be visible
             if not testCase['hiddenOutput']:
                 # Write test status to log file if LOG=True(-more is given as a parameter)
                 # If there are specific test cases
                 if len(self.testCases) > 0:
-                    if self.showInfo and (countSpecificFile in self.testCases):
-                        self.writeLog(countSpecificFile, testCase)
-                    countSpecificFile += 1
+                    if self.showInfo and (count_specific_file in self.testCases):
+                        self.writeLog(count_specific_file, testCase)
+                    count_specific_file += 1
                 else: # Write all test cases
                     if self.showInfo:
                         self.writeLog(count, testCase)
                         count += 1
 
         # Something was written to file
-        if count > 1 or countSpecificFile > 0:
+        if count > 1 or count_specific_file > 0:
             self.logFileBool = True
 
         # Count specific, same as the above count, this one is used for command line output
-        countSpecificOutput = 1
+        count_specific_output = 1
 
         # Check if there are specific test cases given by user
         if len(self.testCases) == 0:
             # Testing all available test cases
-            for key in sorted(testCaseDict):
-                numberOfTests += 1
-                if self.checkTestCase(numberOfTests, testCaseDict[key]):
+            for key in sorted(test_case_dict):
+                number_of_tests += 1
+                if self.checkTestCase(number_of_tests, test_case_dict[key]):
                     passed += 1
             puts()
         # Testing only specific test cases
         else:	
-            for key in sorted(testCaseDict):
+            for key in sorted(test_case_dict):
                 if key in self.testCases:
-                    numberOfTests += 1
-                    if self.checkTestCase(countSpecificOutput, testCaseDict[key]):
+                    number_of_tests += 1
+                    if self.checkTestCase(count_specific_output, test_case_dict[key]):
                         passed += 1
-                countSpecificOutput += 1
+                count_specific_output += 1
             puts()
 
-        self.printFinalResult(problem_id, output, passed, numberOfTests)
+        self.printFinalResult(problem_id, output, passed, number_of_tests)
 
     def setCompilerType(self):
         if self.fileType == 'jar':
@@ -264,10 +264,10 @@ class CLI:
             return
         
         f = open(self.pathToExecutable, 'r')
-        firstLine = f.readline()
+        first_line = f.readline()
         f.close()
 
-        if platform.system() == 'Windows' or firstLine[:2] != '#!':
+        if platform.system() == 'Windows' or first_line[:2] != '#!':
             if self.fileType == "py":
                 self.compilerType = ['python', self.pathToExecutable]
             elif self.fileType == "rb":
@@ -277,50 +277,47 @@ class CLI:
         else:
             self.compilerType = [self.pathToExecutable]
 
-    def writeLog(self, count, testCase):
+    def writeLog(self, count, test_case):
         # Used for formating
         separator = "=================================\n\n"
 
         # Format output for log file
-        if testCase['accepted']:
+        if test_case['accepted']:
             header = '>>>Test case number ' + str(count) + ": " + "Passed!<<<\nInput:\n"
         else:
             header = '>>>Test case number ' + str(count) + ": " + "Failed!<<<\n\nInput:\n"
-        testCaseInput = testCase['input'].rstrip() + "\n\n"
+        test_case_input = test_case['input'].rstrip() + "\n\n"
         # Separator
-        userOutputText = "Your output:\n"
-        userOutput = testCase['userOutput'].rstrip() + "\n\n"
-        reqOutputText = "Required output:\n"
-        reqOutput = testCase['requiredOutput'].rstrip() + "\n\n"
+        user_output_text = "Your output:\n"
+        user_output = test_case['userOutput'].rstrip() + "\n\n"
+        req_output_text = "Required output:\n"
+        req_output = test_case['requiredOutput'].rstrip() + "\n\n"
         # Separator
         
         if self.firstLog:
-            logFile = open(self.logFilePath, 'w')
+            log_file = open(self.logFilePath, 'w')
             self.firstLog = False
         else:
-            logFile = open(self.logFilePath, 'a')
+            log_file = open(self.logFilePath, 'a')
         # Combine the formatted output
-        fullLog = header + testCaseInput + separator + userOutputText + userOutput + reqOutputText + reqOutput + separator + "\n"
-        logFile.write(fullLog)
-        logFile.close()
+        full_log = header + test_case_input + separator + user_output_text + user_output + req_output_text + req_output + separator + "\n"
+        log_file.write(full_log)
+        log_file.close()
 
     def POSTEvaluate(self, problem_id, token):
         return requests.post(CLI.Endpoints.get_evaluation_endpoint(problem_id, token), json=self.outputList).json()
 
-    def formatOutput(self, output, testCaseId):
-        data = {}
-        data['id'] = testCaseId
-        data['output'] = output
-        return data
+    def formatOutput(self, output, test_case_id):
+        return {'id': test_case_id, 'output': output}
 
-    def printFinalResult(self, problem_id, output, passed, numberOfTests):
-        # Given test cases dont exist
-        if numberOfTests == 0 and len(self.testCases) > 0:
+    def printFinalResult(self, problem_id, output, passed, number_of_tests):
+        # Given test cases don't exist
+        if number_of_tests == 0 and len(self.testCases) > 0:
             puts(colored.red("Given test cases " + str(self.testCases) + " don't exist for problem with id " + str(
                 problem_id) + "!"))
             sys.exit(1)
         # No tests found
-        elif numberOfTests == 0:
+        elif number_of_tests == 0:
             puts(colored.red("No test cases found for problem with id " + str(problem_id) + "!"))
             sys.exit(1)
 
@@ -329,11 +326,11 @@ class CLI:
             puts(colored.yellow("Check log file \"cae_log\" in your working directory for more detailed info!"))
 
         # All tests passed
-        if passed >= numberOfTests:
-            puts(colored.green("\nAll (" + str(numberOfTests) + ") test/s passed! Well done!"))
+        if passed >= number_of_tests:
+            puts(colored.green("\nAll (" + str(number_of_tests) + ") test/s passed! Well done!"))
         # All tests failed
         elif passed <= 0:
-            puts(colored.red("\nAll (" + str(numberOfTests) + ") test/s failed! Try again!"))
+            puts(colored.red("\nAll (" + str(number_of_tests) + ") test/s failed! Try again!"))
         # Some test failed
         else:
             puts("\nNumber of tests passed: " + str(passed) + "/" + str(len(output['testCases'])))
@@ -403,15 +400,15 @@ class CLI:
 
         # Check if second argument(executable) is a valid file
         if args[1]:
-            pathToFile = self.getFullPath(args[1])
-            self.fileType = self.getFileType(pathToFile)
-            if pathToFile:
-                if os.path.exists(pathToFile):
-                    if os.path.isfile(pathToFile) and os.access(pathToFile, os.X_OK):
+            path_to_file = self.getFullPath(args[1])
+            self.fileType = self.getFileType(path_to_file)
+            if path_to_file:
+                if os.path.exists(path_to_file):
+                    if os.path.isfile(path_to_file) and os.access(path_to_file, os.X_OK):
                         # Show if user wants more info (LOG=True)
                         if self.showInfo:
                             puts(colored.green(CLI.Strings.FILE_IS_VALID))
-                        self.pathToExecutable = pathToFile
+                        self.pathToExecutable = path_to_file
                     else:
                         puts(colored.red(CLI.Strings.NOT_A_FILE))
                         puts(colored.yellow(CLI.Strings.COMMAND_EXAMPLE))
@@ -432,15 +429,15 @@ class CLI:
         # Check if third argument(specific test case numbers) exists
         if args[2] and ((len(args) >= 4) or not self.options):
             try:
-                toParse = str(args[2])
+                to_parse = str(args[2])
                 # Remove last char if not int
-                toParse = self.chechLastChar(toParse)
+                to_parse = self.chechLastChar(to_parse)
 
                 # Different types of range
 
                 # First type, e.g. 1-5 (both inclusive)
-                if "-" in toParse:
-                    splited = toParse.split("-")
+                if "-" in to_parse:
+                    splited = to_parse.split("-")
                     if len(splited) == 2:
                         # Check if values for range are valid
                         self.checkRange(splited)
@@ -450,8 +447,8 @@ class CLI:
                         self.invalidTestCaseRange()
 
                 # Second type, e.g. 2..4 (both inclusive)
-                elif ".." in toParse:
-                    splited = toParse.split("..")
+                elif ".." in to_parse:
+                    splited = to_parse.split("..")
                     if len(splited) == 2:
                         # Check if values for range are valid
                         self.checkRange(splited)
@@ -460,8 +457,8 @@ class CLI:
                         self.invalidTestCaseRange()
 
                 # Third type, e.g. 4,5,7,10
-                elif "," in toParse:
-                    splited = toParse.split(",")
+                elif "," in to_parse:
+                    splited = to_parse.split(",")
                     # Check if arguments are valid
                     for i in splited:
                         self.isInt(i)
@@ -480,12 +477,12 @@ class CLI:
                 puts(colored.red("Not a valid string for test case numbers!"))
                 sys.exit(1)
 
-    def chechLastChar(self, toParse):
+    def chechLastChar(self, to_parse):
         try:
-            int(toParse[-1])
+            int(to_parse[-1])
         except ValueError:
-            toParse = toParse[:-1]
-        return toParse
+            to_parse = to_parse[:-1]
+        return to_parse
 
     def isInt(self, i):
         try:
@@ -531,12 +528,12 @@ class CLI:
     # Get the extension of the users file (executable)
     @staticmethod
     def getFileType(pathToFile):
-        fileName = ''
+        file_name = ''
         if "/" in pathToFile:
-            fileName = pathToFile.split("/")[-1]
+            file_name = pathToFile.split("/")[-1]
         elif "\\" in pathToFile:
-            fileName = pathToFile.split("\\")[-1]
-        type = fileName.split(".")[-1]
+            file_name = pathToFile.split("\\")[-1]
+        type = file_name.split(".")[-1]
         return type
 
     @staticmethod
