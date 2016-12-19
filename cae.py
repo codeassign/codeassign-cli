@@ -535,7 +535,8 @@ class CLI:
         type = fileName.split(".")[-1]
         self.fileType = type
 
-    def exit_if_no_arguments(self, args):
+    @staticmethod
+    def exit_if_no_arguments(args):
         if len(args) == 0:
             puts(colored.red(CLI.Strings.NO_ARGUMENTS_GIVEN))
             sys.exit(1)
