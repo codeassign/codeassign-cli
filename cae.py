@@ -87,7 +87,6 @@ class CLI:
             with open(output_file, 'w') as output:
                 output.write(self.to_output())
 
-
     def __init__(self):
 
         # List of ints, used if user wants to test specific test cases (not all)
