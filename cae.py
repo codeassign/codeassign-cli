@@ -89,8 +89,6 @@ class CLI:
         # List of ints, used if user wants to test specific test cases (not all)
         self.testCases = []
 
-        # Path to .codeassign file
-        self.tokenPath = os.path.join(os.path.expanduser("~"), ".codeassign")
         # Path to log file
         self.logFilePath = os.path.join(os.getcwd(), "cae_log.txt")
 
@@ -116,18 +114,18 @@ class CLI:
         # First time log
         self.firstLog = True
 
+        # Load config file properties
+        properties = CLI.Properties()
+
         # Get all arguments from command line
         self.args = Args()
         self.exit_if_no_arguments(self.args)
 
         # Check given arguments
-        self.checkArguments()
+        self.checkArguments(properties)
 
         # Get test cases for given problem id
         self.values = self.getInputValues()
-
-        # Load config file properties
-        properties = CLI.Properties()
 
         token = self.load_token(properties)
 
@@ -378,29 +376,19 @@ class CLI:
             puts(colored.red(connectionError))
             sys.exit(1)
 
-    def checkArguments(self):
+    def checkArguments(self, properties):
         # Check for additional options and modify internal values accordingly
         if "-" in self.args[len(self.args) - 1]:
             if self.args[-1] == "-less":
-                self.modifyLog("\nLOG=False", False)
+                properties.set_log(False)
+                properties.save()
                 self.options = True
             if self.args[-1] == "-more":
-                self.modifyLog("\nLOG=True", True)
+                properties.set_log(True)
+                properties.save()
                 self.options = True
         else:
-            if os.path.exists(self.tokenPath) and os.path.isfile(self.tokenPath):
-                tokenFile = open(self.tokenPath, 'r')
-            else:
-                tokenFile = open(self.tokenPath, 'w+')
-            for i, line in enumerate(tokenFile):
-                if i == 1:
-                    value = line.split("=")[1].rstrip()
-                    if value == "True":
-                        self.showInfo = True
-                    elif value == "False":
-                        self.showInfo = False
-                    else:
-                        pass
+            self.showInfo = properties.get_log()
 
         # Check if first argument(problemId) is a valid number
         try:
@@ -492,21 +480,6 @@ class CLI:
             except ValueError:
                 puts(colored.red("Not a valid string for test case numbers!"))
                 sys.exit(1)
-
-    def modifyLog(self, stringBool, boolValue):
-        if os.path.exists(self.tokenPath) and os.path.isfile(self.tokenPath):
-            tokenFile = open(self.tokenPath, 'r')
-        else:
-            tokenFile = open(self.tokenPath, 'w+')
-        list = []
-        list.append(tokenFile.readline().rstrip())
-        list.append(tokenFile.readline().rstrip())
-        list[1] = stringBool
-        tokenFile.close()
-        tokenFile = open(self.tokenPath, 'w')
-        tokenFile.writelines(list)
-        tokenFile.close()
-        self.showInfo = boolValue
 
     def chechLastChar(self, toParse):
         try:
