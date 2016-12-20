@@ -116,7 +116,7 @@ class CLI:
         properties = CLI.Properties()
 
         args = Args()
-        CLI.exit_if_no_arguments(args)
+        self.exit_if_no_arguments(args)
         self.load_arguments(args, properties)
 
         # Get test cases for given problem id
