@@ -106,8 +106,6 @@ class CLI:
         # Which compiler should be used
         self.compilerType = ''
 
-        # List of outputs to evaluate
-        self.outputList = []
         # Check if user wants more or less info
         self.showInfo = True
         # Additional options used in argument
@@ -182,6 +180,8 @@ class CLI:
 
     # Test the code with input
     def evaluate(self, inputs, problem_id, token):
+        output_list = []
+
         for test_case in inputs:
             test_case_id = test_case['id']
             # Check which compiler to use based on the self.fileType
@@ -191,12 +191,12 @@ class CLI:
                                            stdout=subprocess.PIPE, shell=False).communicate(test_case['input'])
                 output = process[0]
                 data = self.format_output(output, test_case_id)
-                self.outputList.append(data)
+                output_list.append(data)
             except OSError:
                 puts(colored.red(CLI.Strings.NOT_EXECUTABLE))
                 sys.exit(1)
 
-        output = self.validate_on_server(problem_id, token)
+        output = self.validate_on_server(problem_id, output_list, token)
         # Check if something is wrong
         self.check_json_status_code(output)
         # Used to check if tests passed evaluation
@@ -304,8 +304,9 @@ class CLI:
         log_file.write(full_log)
         log_file.close()
 
-    def validate_on_server(self, problem_id, token):
-        return requests.post(CLI.Endpoints.get_evaluation_endpoint(problem_id, token), json=self.outputList).json()
+    @staticmethod
+    def validate_on_server(problem_id, output_list, token):
+        return requests.post(CLI.Endpoints.get_evaluation_endpoint(problem_id, token), json=output_list).json()
 
     @staticmethod
     def format_output(output, test_case_id):
