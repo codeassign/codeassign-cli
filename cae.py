@@ -101,8 +101,6 @@ class CLI:
         self.pathToExecutable = ''
         # File's extension
         self.fileType = ''
-        # Internal list used to store the values from GET call
-        self.values = []
         # Which compiler should be used
         self.compilerType = ''
 
